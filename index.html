@@ -229,7 +229,7 @@ h1, h2 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
 .howto ol { margin: 0; padding-left: 1.3em; font-size: 14px; display: grid; gap: 4px; }
 .howto textarea { width: 100%; font: 13px/1.5 var(--f-mono); color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 10px; padding: 10px; resize: vertical; }
 .howto .btn { min-height: 44px; font-size: 15px; }
-.howto .field { width: 100%; font: 15px/1.4 var(--f-body); color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.howto .field, .stepbody .field { width: 100%; font: 15px/1.4 var(--f-body); color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; }
 .howto a { color: var(--print); }
 .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
 .step { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; }
@@ -246,6 +246,27 @@ h1, h2 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
 .subblock[open] { gap: 10px; }
 .prompt { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.6 var(--f-mono); background: var(--paper); border-radius: 10px; padding: 10px; max-height: 220px; overflow: auto; }
 label.btn { display: inline-flex; align-items: center; justify-content: center; text-align: center; }
+a.btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; text-align: center; }
+
+/* weakness + AI tools */
+.weak-list { display: grid; gap: 8px; }
+.weak-row { background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 6px; }
+.weak-main { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.weak-meter { height: 6px; background: var(--bad-bg); border-radius: 3px; overflow: hidden; }
+.weak-meter i { display: block; height: 100%; background: var(--ok); }
+.weak-meta { font-size: 12.5px; color: var(--muted); }
+.weak-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.weak-panel { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 10px; }
+.sum-tool { display: grid; gap: 8px; margin-top: 12px; }
+.sum-tool > .btn { justify-self: start; }
+.guide .define { font-weight: 700; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 12.5px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; color: var(--muted); }
+.ai-tools { display: grid; gap: 8px; border-top: 1px dashed var(--line); padding-top: 12px; }
+.guide { display: grid; gap: 6px; font-size: 15px; background: var(--paper); border-radius: 10px; padding: 10px 12px; }
+.guide p { margin: 0; }
+.guide .h { font-weight: 700; color: var(--print); }
+.guide ul, .guide ol { margin: 0; padding-left: 1.3em; display: grid; gap: 3px; }
 
 /* on-screen answer key */
 .key-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; }
@@ -330,7 +351,7 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
     stats: {},          // id -> {right, wrong, streak, mastered, lastChoice, lastAt, lastResult}
     sessions: [],       // newest first
     db: null,
-    prefs: Object.assign({ subjects: SUBJECTS.map(s => s.name), count: 10, mode: "all", open: true }, store.get("nq_prefs", {})),
+    prefs: Object.assign({ subjects: SUBJECTS.map(s => s.name), count: 50, mode: "all", open: true }, store.get("nq_prefs", {})),
     run: null,          // {ids, idx, answers: {id: {choice, correct, done}}, startedAt}
     view: "home",
   };
@@ -525,6 +546,23 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
         <span class="sub">共 <span class="mono">${S.questions.length}</span> 題・物理 ${counts["物理"]}・化學 ${counts["化學"]}・生物 ${counts["生物"]}・地科 ${counts["地科"]}</span>
       </header>
 
+      <section class="section">
+        <h2>題數</h2>
+        <div class="count-row">
+          <input type="range" id="countRange" min="1" max="${maxN}" step="1" value="${Math.min(S.prefs.count, maxN)}" aria-label="題數">
+          <span class="val" id="countVal">${Math.min(S.prefs.count, maxN)}</span>
+        </div>
+        <label class="switch" for="openToggle"><span>包含非選擇題<br><span class="notice">非選擇題看完解答後自己判斷對錯</span></span><input type="checkbox" id="openToggle" ${S.prefs.open ? "checked" : ""}></label>
+      </section>
+
+      ${PUBLIC ? `<section class="section">
+        <h2>新增題目 <small>用 AI 整理題本照片</small></h2>
+        <div class="exam-box">
+          ${guideHtml("home")}
+          <div class="exam-status" id="bankStatus" aria-live="polite"></div>
+        </div>
+      </section>` : ""}
+
       ${canResume ? `<div class="resume"><span>上次的練習做到第 <span class="mono">${saved.idx + 1}</span> / ${saved.ids.length} 題</span><button class="btn small print" id="resumeBtn">繼續</button></div>` : ""}
 
       <section class="section">
@@ -535,6 +573,8 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
           <div class="stat"><b>${masteredN}</b><span>錯題已掌握</span></div>
         </div>
       </section>
+
+      ${weakHtml()}
 
       <section class="section">
         <h2>科目 <small>可複選</small></h2>
@@ -553,14 +593,6 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
         </div>
       </section>
 
-      <section class="section">
-        <h2>題數</h2>
-        <div class="count-row">
-          <input type="range" id="countRange" min="1" max="${maxN}" step="1" value="${Math.min(S.prefs.count, maxN)}" aria-label="題數">
-          <span class="val" id="countVal">${Math.min(S.prefs.count, maxN)}</span>
-        </div>
-        <label class="switch" for="openToggle"><span>包含非選擇題<br><span class="notice">非選擇題看完解答後自己判斷對錯</span></span><input type="checkbox" id="openToggle" ${S.prefs.open ? "checked" : ""}></label>
-      </section>
 
       <section class="section">
         <h2>一鍵生成考卷 <small>照上面的科目、出題方式與題數出題</small></h2>
@@ -573,13 +605,7 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
         </div>
       </section>
 
-      ${PUBLIC ? `<section class="section">
-        <h2>新增題目 <small>用 AI 整理題本照片</small></h2>
-        <div class="exam-box">
-          ${guideHtml("home")}
-          <div class="exam-status" id="bankStatus" aria-live="polite"></div>
-        </div>
-      </section>
+      ${PUBLIC ? `${gemHtml()}
       <section class="section">
         <h2>題庫管理 <small>題庫只存在這台裝置</small></h2>
         <div class="exam-box">
@@ -623,6 +649,8 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
     const rb = document.getElementById("resumeBtn");
     if (rb) rb.addEventListener("click", () => { S.run = saved; S.view = "quiz"; renderQuiz(); });
     if (PUBLIC) wireBankTools();
+    wireWeak();
+    if (PUBLIC) wireGem();
 
     const n = Math.min(+range.value, maxN);
     const empty = S.prefs.mode === "wrong" ? availWrong === 0 : avail.length === 0;
@@ -709,7 +737,8 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
         ? `<div class="verdict ok"><b>答對了</b><span class="ans">答案 ${esc(q.keys)}</span></div>`
         : `<div class="verdict bad"><b>答錯了</b><span class="ans">你選 ${esc(ans.choice || "—")}，正確答案 ${esc(q.keys)}</span></div>`;
     }
-    fb.innerHTML = `${verdict}<div class="explain">${explainHtml(q.explain)}<div>${ai}</div></div>`;
+    fb.innerHTML = `${verdict}<div class="explain">${explainHtml(q.explain)}<div>${ai}</div></div>${aiToolsHtml(q)}`;
+    wireAiTools(q);
 
     const last = S.run.idx >= S.run.ids.length - 1;
     const next = () => { if (last) finishRun(); else { S.run.idx++; saveRun(); renderQuiz(); } };
@@ -726,6 +755,14 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
 
   // ---------- result ----------
   function finishRun() {
+    if (S.queueAfter && S.queueAfter.length) {
+      const q = S.queueAfter; S.queueAfter = null;
+      const r = S.run, done = r.ids.filter(id => r.answers[id] && r.answers[id].done);
+      if (done.length) recordSession(Object.assign({}, r, { ids: done }));
+      S.run = null; saveRun();
+      startRun(q.filter(id => S.byId.has(id)));
+      return;
+    }
     const run = S.run;
     const doneIds = run.ids.filter(id => run.answers[id] && run.answers[id].done);
     const finished = Object.assign({}, run, { ids: doneIds });
@@ -739,11 +776,20 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
     const total = run.ids.length;
     const correct = run.ids.filter(id => run.answers[id].correct).length;
     const wrongIds = run.ids.filter(id => !run.answers[id].correct);
+    const groups = PUBLIC ? conceptGroups(wrongIds) : [];
     app.innerHTML = `
       <header class="masthead"><span class="eyebrow">練習結果</span>
         <div class="score"><div class="big mono">${correct}<small> / ${total}</small></div>
         <span class="muted">${total ? Math.round(correct / total * 100) : 0}%・答錯的題目已加入錯題本</span></div>
       </header>
+      ${PUBLIC && groups.length ? `<section class="section">
+        <h2>統整這回不熟的觀念</h2>
+        <div class="exam-box">
+          <p>這回答錯 ${wrongIds.length} 題，涉及 ${groups.length} 個觀念：${groups.map(g => `「${esc(g.name)}」`).join("")}。請 AI 一次統整重點，並針對每個觀念出 2 題類似題。</p>
+          <button class="btn print" id="sumAllBtn">統整這回不熟的觀念</button>
+          <div class="weak-panel" id="sumAllPanel" hidden></div>
+        </div>
+      </section>` : ""}
       <div class="rlist">
         ${run.ids.map((id, i) => {
           const q = S.byId.get(id), a = run.answers[id];
@@ -754,6 +800,11 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
         }).join("")}
       </div>
     `;
+    const sb = document.getElementById("sumAllBtn");
+    if (sb) sb.addEventListener("click", () => {
+      const panel = document.getElementById("sumAllPanel");
+      openSummary(panel, groups, r => showSummaryResult(panel, r, ids => startRun(ids)));
+    });
     const btns = [{ label: "回首頁", cls: "ghost", id: "homeBtn", onClick: renderHome }];
     if (wrongIds.length) btns.push({ label: `錯的 ${wrongIds.length} 題再練一次`, cls: "print", id: "retryBtn", onClick: () => startRun(shuffle(wrongIds.slice())) });
     else btns.push({ label: "再練一回", cls: "print", id: "againBtn", onClick: renderHome });
@@ -988,22 +1039,22 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
     { id: "SMP-0001", subject: "物理", unit: "力學（牛頓第二定律）", source: "範例題目（原創）",
       stem: "一輛質量 1000 公斤的汽車，在水平路面上由靜止開始以等加速度前進，5 秒後速率達到 10 m/s。若忽略空氣阻力，則汽車所受的合力量值約為多少牛頓？",
       options: [{ k: "A", t: "500" }, { k: "B", t: "1000" }, { k: "C", t: "2000" }, { k: "D", t: "5000" }, { k: "E", t: "10000" }],
-      keys: "C", multi: false, need: null, note: "", answer: "C", ansSource: "範例題目",
+      keys: "C", multi: false, need: null, note: "", answer: "C", ansSource: "範例題目", concept: "牛頓第二運動定律",
       explain: "- 解析：a ＝ Δv ÷ t ＝ 10 ÷ 5 ＝ 2 m/s²；F ＝ ma ＝ 1000 × 2 ＝ 2000 N。\n- 觀念重點：先由速度變化求加速度，再用 F ＝ ma。", figures: [] },
     { id: "SMP-0002", subject: "化學", unit: "化學計量（莫耳）", source: "範例題目（原創）",
       stem: "下列哪些物質的量恰為 1 莫耳？（原子量：H＝1，C＝12，O＝16）（應選 2 項）",
       options: [{ k: "A", t: "18 克的水" }, { k: "B", t: "16 克的氧氣" }, { k: "C", t: "44 克的二氧化碳" }, { k: "D", t: "1 克的氫氣" }, { k: "E", t: "6 克的碳" }],
-      keys: "AC", multi: true, need: 2, note: "", answer: "AC", ansSource: "範例題目",
+      keys: "AC", multi: true, need: 2, note: "", answer: "AC", ansSource: "範例題目", concept: "莫耳數換算",
       explain: "- 解析：\n  - (A) 18 ÷ 18 ＝ 1 mol，對。\n  - (B) O₂ 分子量 32，16 克只有 0.5 mol。\n  - (C) 44 ÷ 44 ＝ 1 mol，對。\n  - (D) H₂ 分子量 2，1 克只有 0.5 mol。\n  - (E) 6 ÷ 12 ＝ 0.5 mol。\n- 觀念重點：莫耳數 ＝ 質量 ÷ 分子量，注意雙原子分子。", figures: [] },
     { id: "SMP-0003", subject: "生物", unit: "細胞（胞器）", source: "範例題目（原創）",
       stem: "胰臟細胞會大量分泌消化酶。下列哪一個胞器在這類細胞中最可能特別發達？",
       options: [{ k: "A", t: "葉綠體" }, { k: "B", t: "中央大液泡" }, { k: "C", t: "粗糙內質網" }, { k: "D", t: "細胞壁" }, { k: "E", t: "中心粒" }],
-      keys: "C", multi: false, need: null, note: "", answer: "C", ansSource: "範例題目",
+      keys: "C", multi: false, need: null, note: "", answer: "C", ansSource: "範例題目", concept: "分泌蛋白的合成路徑",
       explain: "- 解析：消化酶是蛋白質，由附著在粗糙內質網上的核糖體合成並加工，分泌旺盛的細胞粗糙內質網特別發達。動物細胞沒有葉綠體、細胞壁與中央大液泡。\n- 觀念重點：分泌蛋白路徑：核糖體 → 粗糙內質網 → 高基氏體 → 細胞膜。", figures: [] },
     { id: "SMP-0004", subject: "地科", unit: "天文（月相）", source: "範例題目（原創）",
       stem: "農曆十五日晚上，在臺灣看到的月相與月球位置，下列敘述何者正確？",
       options: [{ k: "A", t: "滿月，日落時從東方升起" }, { k: "B", t: "滿月，日落時從西方落下" }, { k: "C", t: "新月，整晚都看不到" }, { k: "D", t: "上弦月，日落時位於南方天空" }, { k: "E", t: "下弦月，半夜才從東方升起" }],
-      keys: "A", multi: false, need: null, note: "", answer: "A", ansSource: "範例題目",
+      keys: "A", multi: false, need: null, note: "", answer: "A", ansSource: "範例題目", concept: "滿月的位置",
       explain: "- 解析：農曆十五前後為滿月，月球與太陽相差約 180°，太陽西落時月球正好從東方升起，整晚可見。\n- 觀念重點：滿月時日、地、月約成一直線，地球在中間。", figures: [] },
   ] };
   const SUBJ_NAMES = SUBJECTS.map(s => s.name);
@@ -1038,6 +1089,9 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
         options, keys, multi: !!(keys && (keys.length > 1 || q.multi)), need: Number.isInteger(q.need) ? q.need : null,
         note: String(q.note || ""), answer: String(q.answer || ""), ansSource: String(q.ansSource || ""),
         explain: String(q.explain || ""), figures: (Array.isArray(q.figures) ? q.figures : []).map(sanitizeSvg).filter(Boolean),
+        concept: String(q.concept || "").trim().slice(0, 30),
+        related: (Array.isArray(q.related) ? q.related : []).map(x => String(x).trim().slice(0, 30)).filter(Boolean).slice(0, 3),
+        ...(q.guide && typeof q.guide === "object" ? { guide: q.guide } : {}),
       });
     }
     return out;
@@ -1078,6 +1132,7 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
       name: String(data.name || fallbackName || "我的題庫").slice(0, 60), questions,
       stats: data.stats && typeof data.stats === "object" ? data.stats : null,
       sessions: Array.isArray(data.sessions) ? data.sessions.slice(0, 10) : null, skipped,
+      notes: data.notes && typeof data.notes === "object" ? data.notes : null,
     });
   }
 
@@ -1091,6 +1146,24 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
   }
 
   const PREFIX = { "物理": "PHY", "化學": "CHE", "生物": "BIO", "地科": "EAR" };
+  // 把新題目合併進題庫：編號相同但內容不同就自動改號；回傳合併後的題庫與新題目的編號
+  function mergeQuestions(incoming) {
+    const map = new Map(S.questions.map(q => [q.id, q]));
+    const nextNo = {}, ids = [];
+    const bump = subj => {
+      const p = PREFIX[subj];
+      if (nextNo[p] == null) nextNo[p] = Math.max(0, ...[...map.keys()].filter(k => k.startsWith(p + "-")).map(k => parseInt(k.split("-")[1], 10) || 0));
+      nextNo[p] += 1;
+      return `${p}-${String(nextNo[p]).padStart(4, "0")}`;
+    };
+    incoming.forEach(q => {
+      const old = map.get(q.id);
+      if (old && old.stem !== q.stem) q = Object.assign({}, q, { id: bump(q.subject) });
+      map.set(q.id, q); ids.push(q.id);
+    });
+    return { questions: [...map.values()], ids };
+  }
+
   function applyImport(imp, mode) {
     let questions = imp.questions;
     if (mode === "merge") {
@@ -1115,6 +1188,7 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
     }
     if (mode === "replace" && imp.stats) { S.stats = imp.stats; store.set("nq_stats", S.stats); }
     if (mode === "replace" && imp.sessions) { S.sessions = imp.sessions; store.set("nq_sessions", S.sessions); }
+    if (imp.notes) store.set("nq_notes", Object.assign(notes(), imp.notes));
     renderHome();
     bankStatus(`已匯入 ${imp.questions.length} 題${imp.skipped > 0 ? `，略過 ${imp.skipped} 題格式不符的題目` : ""}。題庫共 ${S.questions.length} 題。`);
   }
@@ -1127,12 +1201,19 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
 
+  // 每題的 concept（考的核心觀念）只用在弱點分析，練習時不顯示
+  const CONCEPT_RULE = "11. 先判斷每一題在考什麼：concept 寫這題主要考的一個核心觀念，用 4～12 字的名詞，例如「靜摩擦力方向」「勒沙特列原理」「孟德爾分離律」「滿月的位置」，不同題考同一個觀念時名稱要完全一樣；related 是這題還用到的其他相關概念，1～3 個短名詞。";
+  function conceptHint(subject) {
+    const list = [...new Set(S.questions.filter(q => q.concept && (!subject || q.subject === subject)).map(q => q.concept))].slice(0, 80);
+    return list.length ? `\n已經用過的 concept 名稱（考同一個觀念時請沿用）：${list.join("、")}` : "";
+  }
+
   const PROMPT = [
     "你是高中自然科（物理、化學、生物、地科）題庫建檔助手。請把我上傳的題本照片轉成題目資料。",
     "規則：",
     "1. 逐題辨識照片中的題目。照片可能是橫拍、旋轉或一次拍兩頁。",
     "2. 只輸出一個 JSON 程式碼區塊，不要其他說明。格式：",
-    '{"name":"題本名稱","questions":[{"id":"PHY-0001","subject":"物理","unit":"單元名稱","source":"題本名稱 第1題","stem":"題幹文字","options":[{"k":"A","t":"選項文字"}],"keys":"C","multi":false,"need":null,"answer":"C","ansSource":"AI 解答（待確認）","explain":"- 解析：說明\\n  - (A) 錯。原因\\n- 觀念重點：重點"}]}',
+    '{"name":"題本名稱","questions":[{"id":"PHY-0001","subject":"物理","unit":"單元名稱","source":"題本名稱 第1題","stem":"題幹文字","options":[{"k":"A","t":"選項文字"}],"keys":"C","multi":false,"need":null,"answer":"C","ansSource":"AI 解答（待確認）","explain":"- 解析：說明\\n  - (A) 錯。原因\\n- 觀念重點：重點","concept":"核心觀念","related":["相關概念"]}]}',
     "3. subject 只能是 物理、化學、生物、地科；id 的前綴分別是 PHY、CHE、BIO、EAR，加四位數編號。",
     "4. keys 是正確選項字母，多選題依字母排序（例如 \"BD\"），multi 為 true，need 是應選幾項。",
     "5. 非選擇題的 options 為 []、keys 為 null，答案寫在 answer。",
@@ -1141,6 +1222,7 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
     "8. 照片上有官方解答就照官方答案，ansSource 寫「題本解答」；沒有就自行解題，寫「AI 解答（待確認）」。",
     "9. 手寫筆跡、紅筆批改不是官方答案。看不清的字用［?］標記，不要要求我重拍。",
     "10. explain 用繁體中文逐選項說明對錯，最後一行寫「- 觀念重點：」。",
+    CONCEPT_RULE,
   ].join("\n");
 
   // ---------- public mode: photo → questions via the viewer's own Gemini API key ----------
@@ -1190,12 +1272,16 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
   }
 
   async function geminiExtract(images, bookName) {
-    const parts = [{ text: PROMPT + (bookName ? `\n題本名稱：${bookName}` : "") + "\n請直接輸出 JSON 物件。" }];
+    const parts = [{ text: PROMPT + conceptHint() + (bookName ? `\n題本名稱：${bookName}` : "") + "\n請直接輸出 JSON 物件。" }];
     images.forEach(data => parts.push({ inline_data: { mime_type: "image/jpeg", data } }));
+    return geminiCall(parts, 0.2, "Gemini 沒有回傳題目，可能照片太模糊，請換張照片再試。");
+  }
+
+  async function geminiCall(parts, temperature, emptyMsg) {
     const call = model => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": aiKey() },
-      body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: { temperature: 0.2, responseMimeType: "application/json" } }),
+      body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: { temperature, responseMimeType: "application/json" } }),
     });
     let res;
     try {
@@ -1215,7 +1301,7 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
       throw new Error(`Gemini 回傳錯誤（${res.status}）。請稍後再試。`);
     }
     const text = ((data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || []).map(x => x.text || "").join("");
-    if (!text) throw new Error("Gemini 沒有回傳題目，可能照片太模糊，請換張照片再試。");
+    if (!text) throw new Error(emptyMsg || "Gemini 沒有回傳內容，請再試一次。");
     return text;
   }
 
@@ -1326,7 +1412,7 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
         const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
         bankStatus("已選取提示詞，請按「拷貝」複製。");
       };
-      try { navigator.clipboard.writeText(PROMPT).then(done, fallback); } catch { fallback(); }
+      try { navigator.clipboard.writeText(PROMPT + conceptHint()).then(done, fallback); } catch { fallback(); }
     });
   }
 
@@ -1354,7 +1440,7 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
     document.getElementById("backupBtn").addEventListener("click", () => {
       downloadText(`自然科題庫備份_${todayStr("")}.json`, JSON.stringify({
         format: "自然科題庫備份", exportedAt: new Date().toISOString(), name: S.bankName,
-        questions: S.questions, stats: S.stats, sessions: S.sessions,
+        questions: S.questions, stats: S.stats, sessions: S.sessions, notes: notes(),
       }));
       bankStatus("已匯出備份檔（含題目與作答紀錄）。");
     });
@@ -1362,7 +1448,7 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
     const clearBtn = document.getElementById("clearBtn");
     clearBtn.addEventListener("click", () => {
       if (!armed) { armed = true; clearBtn.textContent = "再按一次確認清除"; bankStatus("清除後題目與作答紀錄都會刪除，建議先匯出備份。", true); return; }
-      ["nq_bank", "nq_stats", "nq_sessions", "nq_run"].forEach(k => store.del(k));
+      ["nq_bank", "nq_stats", "nq_sessions", "nq_run", "nq_notes"].forEach(k => store.del(k));
       S.stats = {}; S.sessions = []; setBank({ questions: [] });
       renderWelcome();
     });
@@ -1407,6 +1493,408 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
     });
     setBar(null);
     window.scrollTo(0, 0);
+  }
+
+  // ---------- 弱點分析（依 單元 = 章節（題型）統計正確率） ----------
+  function splitUnit(unit) {
+    const m = String(unit || "").match(/^([^（(]+)[（(](.+)[）)]\s*$/);
+    return m ? [m[1].trim(), m[2].trim()] : [String(unit || "未分類").trim() || "未分類", ""];
+  }
+
+  // 題目的觀念：有 concept 用 concept，舊題目退回「章節（題型）」
+  function conceptOf(q) {
+    const [chapter, type] = splitUnit(q.unit);
+    const name = q.concept || (type ? `${chapter}（${type}）` : chapter);
+    return { key: `${q.subject}｜${name}`, name, chapter, tagged: !!q.concept };
+  }
+
+  // 觀念統整：AI 回覆的 summary 存在這裡，key 與弱點分析相同
+  const notes = () => store.get("nq_notes", {});
+
+  function weakGroups() {
+    const g = new Map();
+    for (const q of S.questions) {
+      const c = conceptOf(q);
+      if (!g.has(c.key)) g.set(c.key, { key: c.key, subject: q.subject, name: c.name, concept: q.concept || "", chapter: c.chapter, ids: [], right: 0, wrong: 0, unmastered: 0 });
+      const x = g.get(c.key), st = S.stats[q.id];
+      x.ids.push(q.id);
+      if (st) { x.right += st.right || 0; x.wrong += st.wrong || 0; if (isWrongBook(q.id)) x.unmastered++; }
+    }
+    return [...g.values()].filter(x => x.right + x.wrong > 0)
+      .map(x => Object.assign(x, { acc: x.right / (x.right + x.wrong) }))
+      .sort((a, b) => a.acc - b.acc || b.wrong - a.wrong);
+  }
+
+  // 題目＋正確答案＋使用者上次選的答案（給 AI 分析用）
+  function myAttempt(id) {
+    const q = S.byId.get(id), st = S.stats[id];
+    if (!q) return "";
+    const mine = st && st.lastChoice ? `我上次選：${st.lastChoice}（${st.lastResult === "right" ? "答對" : "答錯"}）` : "";
+    return `${qBrief(q)}${mine ? "\n" + mine : ""}`;
+  }
+
+  // 把答錯的題目依觀念分組；觀念太多時只取答錯最多的 5 個，避免 AI 回覆太長被截斷
+  const MAX_SUM_GROUPS = 5;
+  function conceptGroups(ids) {
+    const g = new Map();
+    ids.forEach(id => {
+      const q = S.byId.get(id);
+      if (!q) return;
+      const c = conceptOf(q);
+      if (!g.has(c.key)) g.set(c.key, { key: c.key, subject: q.subject, name: c.name, unit: q.unit, refs: [] });
+      g.get(c.key).refs.push(id);
+    });
+    return [...g.values()].sort((a, b) => b.refs.length - a.refs.length).slice(0, MAX_SUM_GROUPS)
+      .map(x => Object.assign(x, { refs: x.refs.slice(0, 3) }));
+  }
+
+  function summaryPrompt(groups) {
+    return [
+      "你是台灣學測自然科家教兼出題老師。我剛做完一回練習，下面是我答錯的題目，已經依觀念分組，附上正確答案和我選的答案。",
+      "請做兩件事：",
+      "一、每一個觀念各寫一份統整，寫給高中生看，每項簡潔具體。",
+      "二、每一個觀念各設計 2 題類似題：觀念相同，但情境、數據、敘述不同，難度接近學測，針對我可能誤解的地方設計。每一題都要先自己完整解過、確認答案正確。",
+      "只輸出一個 JSON 程式碼區塊，前後不要任何說明。格式：",
+      '{"summaries":[{"concept":"觀念名稱","define":"一句話說明這個觀念","keyPoints":["觀念重點或公式"],"steps":["解這類題的步驟，依序寫"],"mistake":"根據我選的答案，推測我誤解了什麼，以及正確的想法","traps":["常見陷阱與檢查方法"],"related":["相關概念"]}],"questions":[題目]}',
+      "每個陣列 2～5 項。summaries 的 concept 要完全照下面給的觀念名稱。questions 裡每一題的格式：",
+      (l => l.slice(l.indexOf('{"id"'), l.lastIndexOf("]")))(PROMPT.split("\n")[4]),
+      "題目規則：concept 填它對應的觀念名稱（完全照下面給的名稱）；subject 與 unit 照該觀念標示的寫；related 是 1～3 個相關概念；source 寫「AI 類似題」；ansSource 寫「AI 生成（待確認）」；id 前綴物理 PHY、化學 CHE、生物 BIO、地科 EAR，從 9001 起編號；keys 是正確選項字母，多選題依字母排序並設 multi 為 true、need 為應選幾項；explain 格式為「- 解析：…\\n  - (A) 對／錯。…\\n- 觀念重點：…」。",
+      ...groups.flatMap((g, i) => [`\n觀念 ${i + 1}：「${g.name}」（subject：${g.subject}；unit：${g.unit || g.name}）`, ...g.refs.map(myAttempt)]),
+    ].join("\n");
+  }
+
+  // 從 AI 回覆取出 JSON（可接受 ```json 程式碼區塊與前後說明文字）
+  function looseJson(text) {
+    const src = String(text || ""), fence = src.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    for (const cand of [src, fence && fence[1], src.slice(src.indexOf("{"), src.lastIndexOf("}") + 1)]) {
+      if (!cand) continue;
+      try { return JSON.parse(cand); } catch {}
+    }
+    return null;
+  }
+
+  function cleanSummary(x) {
+    if (!x || typeof x !== "object") return null;
+    const arr = v => (Array.isArray(v) ? v : []).map(t => String(t).trim()).filter(Boolean).slice(0, 8);
+    const out = { define: String(x.define || "").trim(), keyPoints: arr(x.keyPoints), steps: arr(x.steps), mistake: String(x.mistake || "").trim(), traps: arr(x.traps), related: arr(x.related).slice(0, 5) };
+    return out.define || out.keyPoints.length || out.steps.length ? out : null;
+  }
+
+  function summaryCardHtml(n, withTitle) {
+    const sm = n.summary, list = (t, a, ordered) => a.length ? `<p class="h">${t}</p>${ordered ? "<ol>" : "<ul>"}${a.map(x => `<li>${esc(x)}</li>`).join("")}${ordered ? "</ol>" : "</ul>"}` : "";
+    return `<div class="guide">
+        ${withTitle ? `<div class="weak-main"><span class="pill" style="--c:${colorOf(n.subject)}">${esc(n.subject)}</span><b>${esc(n.concept)}</b></div>` : ""}
+        ${sm.define ? `<p class="define">${esc(sm.define)}</p>` : ""}
+        ${list("觀念重點", sm.keyPoints)}${list("解題步驟", sm.steps, true)}
+        ${sm.mistake ? `<p class="h">你可能卡在這裡</p><p>${esc(sm.mistake)}</p>` : ""}
+        ${list("常見陷阱", sm.traps)}
+        ${sm.related.length ? `<p class="h">相關概念</p><div class="tags">${sm.related.map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div>` : ""}
+        <span class="badge-ai">AI 整理（${fmtDate(n.at)}，請自行判斷正確性）</span></div>`;
+  }
+
+  // 統整面板：複製提示詞 → 貼到 AI → 回覆貼回來 → 網站呈現每個觀念的統整、加入類似題
+  function openSummary(panel, groups, onDone) {
+    if (!panel.hidden && panel.innerHTML) { panel.hidden = true; return; }
+    if (!groups.length) return;
+    const text = summaryPrompt(groups);
+    const names = groups.map(g => `「${esc(g.name)}」`).join("");
+    panel.hidden = false;
+    panel.innerHTML = `<ol class="steps">
+        <li class="step"><span class="stepno">1</span><div class="stepbody"><b>複製提示詞，貼到 AI</b>
+          <span class="notice">會附上你做錯的題目和你選的答案，請 AI 統整${names}，每個觀念出 2 題類似題。</span>
+          <button class="btn print" data-p="copy">複製統整提示詞</button>
+          <div class="ailinks">${AI_LINKS.map(([n, u]) => `<a class="btn ghost" href="${u}" target="_blank" rel="noopener">打開 ${n}</a>`).join("")}</div>
+          <details class="peek"><summary>看提示詞內容</summary><pre class="prompt">${esc(text)}</pre></details></div></li>
+        <li class="step"><span class="stepno">2</span><div class="stepbody"><b>複製 AI 的回覆，貼回這裡</b>
+          <textarea rows="4" placeholder="把 AI 回覆的整段內容貼在這裡"></textarea>
+          <div class="exam-actions"><button class="btn ghost" data-p="clip">從剪貼簿貼上</button><button class="btn print" data-p="add">整理並加入</button></div></div></li>
+      </ol>
+      <div class="exam-status" aria-live="polite"></div>`;
+    const st = panel.querySelector(".exam-status"), ta = panel.querySelector("textarea");
+    const say = (m, err) => { st.textContent = m; st.classList.toggle("err", !!err); };
+    panel.querySelector('[data-p="copy"]').addEventListener("click", () => {
+      const fallback = () => { const pre = panel.querySelector(".prompt"); pre.closest("details").open = true;
+        const r = document.createRange(); r.selectNodeContents(pre); const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+        say("已選取提示詞，請按「拷貝」複製。"); };
+      try { navigator.clipboard.writeText(text).then(() => say("已複製。下一步：打開 AI，貼上送出。"), fallback); } catch { fallback(); }
+    });
+    panel.querySelector('[data-p="clip"]').addEventListener("click", async () => {
+      try { const t = await navigator.clipboard.readText(); if (!t.trim()) throw 0; ta.value = t; say("已貼上，按「整理並加入」。"); }
+      catch { say("沒辦法自動讀取剪貼簿，請長按框框選「貼上」。", true); ta.focus(); }
+    });
+    panel.querySelector('[data-p="add"]').addEventListener("click", () => {
+      const data = looseJson(ta.value);
+      if (!data) { say("讀不到內容。請確認複製的是 AI 的整段回覆；如果被截斷，跟 AI 說「請重新完整輸出 JSON」再試一次。", true); return; }
+      // 統整依觀念名稱對回分組；名稱對不上就照順序
+      const raw = Array.isArray(data.summaries) ? data.summaries : data.summary ? [data.summary] : [];
+      const strip = t => String(t || "").replace(/[「」\s]/g, "");
+      const byName = new Map(groups.map(g => [strip(g.name), g]));
+      const now = new Date().toISOString(), nt = notes(), saved = [];
+      raw.forEach((x, i) => {
+        const sm = cleanSummary(x), g = byName.get(strip(x && x.concept)) || groups[i];
+        if (!sm || !g || saved.some(n => n.key === g.key)) return;
+        nt[g.key] = { subject: g.subject, concept: g.name, summary: sm, at: now };
+        saved.push(Object.assign({ key: g.key }, nt[g.key]));
+      });
+      const qs = cleanQuestions(data.questions).map(q => {
+        const g = byName.get(strip(q.concept));
+        return g ? Object.assign(q, { concept: g.name }) : groups.length === 1 ? Object.assign(q, { concept: groups[0].name }) : q;
+      });
+      if (!saved.length && !qs.length) { say("讀不到統整或題目。請確認複製的是 AI 的整段回覆，再試一次。", true); return; }
+      let ids = [];
+      if (qs.length) {
+        const m = mergeQuestions(qs); ids = m.ids;
+        if (!saveBank({ name: S.bankName || "我的題庫", questions: m.questions })) { say("儲存失敗：瀏覽器空間不足，或目前是無痕模式。", true); return; }
+      }
+      if (saved.length) store.set("nq_notes", nt);
+      onDone({ notes: saved, ids });
+    });
+  }
+
+  // 統整完成後的呈現（放在面板原本的位置）
+  function showSummaryResult(panel, r, onPractice) {
+    panel.hidden = false;
+    panel.innerHTML = `${r.notes.map(n => summaryCardHtml(n, r.notes.length > 1)).join("")}
+      ${r.ids.length ? `<div class="exam-status">已加入 ${r.ids.length} 題類似題到題庫。 <button class="btn small print" data-p="go">馬上練這 ${r.ids.length} 題</button></div>` : ""}`;
+    const go = panel.querySelector('[data-p="go"]');
+    if (go) go.addEventListener("click", () => onPractice(r.ids));
+    panel.scrollIntoView({ block: "start" });
+  }
+
+  function weakHtml() {
+    const rows = weakGroups();
+    const weak = rows.filter(x => x.acc < 0.8 || x.unmastered > 0);
+    const canAi = PUBLIC && aiKey();
+    const nt = notes();
+    const row = (x, i) => {
+      const note = nt[x.key];
+      return `<div class="weak-row">
+        <div class="weak-main"><span class="pill" style="--c:${colorOf(x.subject)}">${esc(x.subject)}</span><b>${esc(x.name)}</b></div>
+        ${x.concept && x.chapter !== "未分類" ? `<div class="weak-meta">${esc(x.chapter)}</div>` : ""}
+        <div class="weak-meter"><i style="width:${Math.round(x.acc * 100)}%"></i></div>
+        <div class="weak-meta mono">${Math.round(x.acc * 100)}%・答 ${x.right + x.wrong} 次・錯題 ${x.unmastered}</div>
+        <div class="weak-acts"><button class="btn small" data-weak="${i}" data-act="drill">練這類</button>
+          ${PUBLIC ? `<button class="btn small ghost" data-weak="${i}" data-act="sum">${note ? "重新統整" : "統整這個觀念"}</button>` : ""}
+          ${canAi ? `<button class="btn small ghost" data-weak="${i}" data-act="gen">Gemini 出 5 題</button>` : ""}</div>
+        ${note ? `<details class="peek"><summary>看觀念統整</summary>${summaryCardHtml(note)}</details>` : ""}
+        <div class="weak-panel" id="weakPanel${i}" hidden></div>
+      </div>`;
+    };
+    S.weakRows = rows;
+    return `<section class="section" id="weakSec">
+        <h2>弱點分析 <small>依觀念的正確率</small></h2>
+        ${!rows.length ? `<div class="history"><div class="empty">練習幾題之後，這裡會列出你最不熟的觀念，可以請 AI 統整重點並出類似題。</div></div>` : `
+        <div class="weak-list">${(weak.length ? weak : rows).slice(0, 5).map((x) => row(x, rows.indexOf(x))).join("")}</div>
+        ${rows.length > 5 ? `<details class="peek"><summary>看全部 ${rows.length} 類</summary><div class="weak-list">${rows.slice(5).map((x, i) => row(x, i + 5)).join("")}</div></details>` : ""}
+        <div class="exam-status" id="weakStatus" aria-live="polite"></div>`}
+      </section>`;
+  }
+
+  function wireWeak() {
+    app.querySelectorAll("[data-weak]").forEach(b => b.addEventListener("click", async () => {
+      const i = +b.dataset.weak, x = S.weakRows[i];
+      if (!x) return;
+      if (b.dataset.act === "drill") {
+        const wrongFirst = shuffle(x.ids.filter(isWrongBook));
+        const rest = shuffle(x.ids.filter(id => !isWrongBook(id)));
+        startRun([...wrongFirst, ...rest].slice(0, 10));
+        return;
+      }
+      if (b.dataset.act === "sum") {
+        const panel = document.getElementById("weakPanel" + i);
+        const tried = id => S.stats[id] && S.stats[id].wrong > 0;
+        openSummary(panel, conceptGroups([...x.ids.filter(tried), ...x.ids.filter(id => !tried(id))]), r => showSummaryResult(panel, r, ids => startRun(ids)));
+        return;
+      }
+      const st = document.getElementById("weakStatus");
+      b.disabled = true;
+      try {
+        const base = x.ids.map(id => S.byId.get(id)).filter(Boolean).sort(() => Math.random() - 0.5).slice(0, 3);
+        const ids = await generateSimilar(base, 5, msg => { if (st) { st.textContent = msg; st.classList.remove("err"); } });
+        if (st) {
+          st.innerHTML = `已新增 ${ids.length} 題「${esc(x.name)}」的新題目。 <button class="btn small print" id="weakGo">馬上練</button>`;
+          document.getElementById("weakGo").addEventListener("click", () => startRun(ids));
+        }
+      } catch (e) { if (st) { st.textContent = e.message; st.classList.add("err"); } }
+      finally { b.disabled = false; }
+    }));
+  }
+
+  // ---------- Gemini：類似題、觀念與解題思路 ----------
+  const qBrief = q => JSON.stringify({ id: q.id, subject: q.subject, unit: q.unit, concept: q.concept, related: q.related, stem: q.stem, options: q.options, answer: q.keys || q.answer, explain: q.explain });
+
+  // 送出出題要求 → 解析 → 合併進題庫，回傳新題目的編號
+  async function aiAddQuestions(promptText, progress) {
+    if (!aiKey()) throw new Error("請先在「題庫管理 → 其他方式」設定 Gemini 金鑰。");
+    if (AI.busy) throw new Error("Gemini 正在處理上一個要求，請稍等。");
+    AI.busy = true;
+    try {
+      progress && progress(`Gemini 正在出題（約 20～60 秒），請不要離開這個畫面…`);
+      const text = await geminiCall([{ text: promptText }], 0.8);
+      const got = [];
+      parseImportText(text, "", imp => got.push(...imp.questions));
+      if (!got.length) throw new Error("Gemini 回傳的格式看不懂，請再試一次。");
+      const { questions, ids } = mergeQuestions(got);
+      if (!saveBank({ name: S.bankName || "我的題庫", questions })) throw new Error("儲存失敗：瀏覽器空間不足，或目前是無痕模式。");
+      return ids;
+    } finally { AI.busy = false; }
+  }
+
+  function generateSimilar(base, n, progress) {
+    const ref = base[0];
+    return aiAddQuestions(`你是台灣學測自然科的出題老師。請根據下面「參考題目」考的核心觀念，出 ${n} 題新的題目。
+規則：
+1. 觀念相同，但情境、數據、敘述方式要不同，不能只換數字或照抄。難度接近學測。
+2. 題型比照參考題目（單選、多選或非選擇題）；多選題 multi 為 true、need 為應選幾項，並在題幹最後註明（應選 N 項）。
+3. subject 一律為「${ref.subject}」，unit 一律為「${ref.unit}」，source 寫「Gemini 類似題（依 ${ref.id}）」，ansSource 寫「AI 生成（待確認）」${ref.concept ? `，concept 一律為「${ref.concept}」` : ""}。
+4. id 用 ${PREFIX[ref.subject]}-9001 起編號。
+5. 每題都要有正確答案與逐選項詳解，explain 格式為「- 解析：…\\n  - (A) 對／錯。…\\n- 觀念重點：…」。
+6. 只輸出 JSON 物件，格式與下面的建檔格式相同。
+建檔格式說明：
+${PROMPT}
+參考題目：
+${base.map(qBrief).join("\n")}`, progress);
+  }
+
+  async function fetchGuide(q) {
+    if (q.guide) return q.guide;
+    if (AI.busy) throw new Error("Gemini 正在處理上一個要求，請稍等。");
+    AI.busy = true;
+    try {
+      const text = await geminiCall([{ text:
+        `你是台灣學測自然科家教。針對下面這一題，用繁體中文整理給高中生複習用的重點，只輸出 JSON 物件：
+{"concepts":["這題用到的觀念或公式，每項一句"],"approach":["遇到這類題目的解題步驟，依序寫"],"traps":["常見的陷阱或錯誤"],"variants":["這個觀念還可能怎麼考"]}
+每個陣列 2～5 項，簡潔具體。
+題目：${qBrief(q)}` }], 0.4);
+      let g; try { g = JSON.parse((text.match(/\{[\s\S]*\}/) || [text])[0]); } catch { throw new Error("Gemini 回傳的格式看不懂，請再試一次。"); }
+      const arr = v => (Array.isArray(v) ? v : []).map(x => String(x)).slice(0, 6);
+      q.guide = { concepts: arr(g.concepts), approach: arr(g.approach), traps: arr(g.traps), variants: arr(g.variants) };
+      store.set("nq_bank", { name: S.bankName, questions: S.questions });
+      return q.guide;
+    } finally { AI.busy = false; }
+  }
+
+  function guideHtml2(gd) {
+    const sec = (t, a, ordered) => a.length ? `<p class="h">${t}</p>${ordered ? "<ol>" : "<ul>"}${a.map(x => `<li>${esc(x)}</li>`).join("")}${ordered ? "</ol>" : "</ul>"}` : "";
+    return `<div class="guide">${sec("相關觀念", gd.concepts)}${sec("解題思路", gd.approach, true)}${sec("常見陷阱", gd.traps)}${sec("還可能怎麼考", gd.variants)}<span class="badge-ai">Gemini 整理（請自行判斷正確性）</span></div>`;
+  }
+
+  function aiToolsHtml(q) {
+    if (!PUBLIC) return "";
+    if (!aiKey()) return `<p class="notice">設定 Gemini 金鑰後（首頁 → 題庫管理 → 其他方式），可以看「觀念與解題思路」並請 Gemini 出類似題。</p>`;
+    return `<div class="ai-tools">
+        <div class="exam-actions">
+          <button class="btn small ghost" id="aiGuideBtn">${q.guide ? "觀念與解題思路" : "觀念與解題思路（Gemini）"}</button>
+          <button class="btn small ghost" id="aiSimBtn">出 3 題類似題</button>
+        </div>
+        <div id="aiGuide"></div>
+        <div class="exam-status" id="aiStatus" aria-live="polite"></div>
+      </div>`;
+  }
+
+  function wireAiTools(q) {
+    const gb = document.getElementById("aiGuideBtn");
+    if (!gb) return;
+    const st = document.getElementById("aiStatus");
+    const say = (m, err) => { st.textContent = m; st.classList.toggle("err", !!err); };
+    gb.addEventListener("click", async () => {
+      gb.disabled = true;
+      if (!q.guide) say("Gemini 正在整理觀念與解題思路…");
+      try { document.getElementById("aiGuide").innerHTML = guideHtml2(await fetchGuide(q)); say(""); }
+      catch (e) { say(e.message, true); }
+      finally { gb.disabled = false; }
+    });
+    const sb = document.getElementById("aiSimBtn");
+    sb.addEventListener("click", async () => {
+      sb.disabled = true;
+      try {
+        const ids = await generateSimilar([q], 3, m => say(m));
+        st.innerHTML = `已新增 ${ids.length} 題類似題到題庫（${esc(ids[0])} 起）。 <button class="btn small print" id="aiSimGo">練完這回後馬上練</button>`;
+        document.getElementById("aiSimGo").addEventListener("click", () => {
+          S.queueAfter = ids;
+          say("這回練完後，會接著出這幾題類似題。");
+        });
+      } catch (e) { say(e.message, true); }
+      finally { sb.disabled = false; }
+    });
+  }
+
+  // ---------- Gemini 家教（Gem） ----------
+  const GEM = [
+    "你是我的台灣學測自然科家教（物理、化學、生物、地科），用繁體中文回答。",
+    "我上傳的知識檔是我的「自然科題庫」，是 JSON 格式：",
+    "- questions：我的題目。unit 是單元，括號前是章節、括號內是題型；keys 是正確選項；explain 是解析。",
+    "- stats：每題的作答紀錄。right 答對次數、wrong 答錯次數、streak 連續答對次數、mastered 已掌握。",
+    "你要做的事：",
+    "1. 我說「分析弱點」：依 stats 統計各科、各章節、各題型的正確率，列出最不熟的 5 類，說明可能卡住的觀念，並建議複習順序。",
+    "2. 我說「出 N 題（某章節或題型）類似題」：依題庫中那一類題目考的觀念，出觀念相同但情境、數據不同的新題目，格式像學測（多選要註明應選幾項）。先只給題目，等我作答後才給答案與詳解。出完題目後提醒我：想在練習網站做這些題目，可以說「整理成網站格式」。",
+    "3. 我給你題號（例如 PHY-0001）或貼上一題：列出相關觀念、解題步驟、常見陷阱、還可能怎麼考。",
+    "4. 我說「隨機練 10 題」：從題庫抽題，錯題優先，一次出一題；我回答後批改並解釋，最後總結我錯了哪些題號、該加強什麼。",
+    "5. 我說「整理成網站格式」：把這次對話中你出的新題目（含正確答案與詳解，答案要先自己解過確認）輸出成一個 JSON 程式碼區塊，前後不要其他說明。格式：",
+    '{"name":"Gemini 家教出題","questions":[{"id":"PHY-9001","subject":"物理","unit":"章節（題型）","source":"Gemini 家教出題","stem":"題幹文字","options":[{"k":"A","t":"選項文字"}],"keys":"C","multi":false,"need":null,"answer":"C","ansSource":"AI 生成（待確認）","explain":"- 解析：說明\\n  - (A) 錯。原因\\n- 觀念重點：重點","concept":"核心觀念","related":["相關概念"]}]}',
+    "   subject 只能是 物理、化學、生物、地科，id 前綴分別是 PHY、CHE、BIO、EAR，從 9001 起編號；unit 盡量沿用題庫裡的寫法；keys 是正確選項字母，多選題依字母排序（例如 \"BD\"）、multi 為 true、need 是應選幾項；非選擇題 options 為 []、keys 為 null，答案寫在 answer。",
+    "規則：不確定的答案要說明；不要把題目和答案一起給；說明要具體、適合高中生。",
+  ].join("\n");
+
+  function gemHtml() {
+    if (!PUBLIC) return "";
+    return `<section class="section">
+        <h2>Gemini 家教 <small>建立你的專屬 Gem</small></h2>
+        <div class="exam-box">
+          <p>在 Gemini 建一個「Gem」，把你的題庫和作答紀錄給它當參考資料。之後直接跟它說「分析弱點」「出 5 題力學類似題」「講解 PHY-0001」，它就會照你的題庫回答。</p>
+          <ol class="steps">
+            <li class="step"><span class="stepno">1</span><div class="stepbody"><b>複製 Gem 指示</b>
+              <button class="btn print" id="gemCopy">複製 Gem 指示</button>
+              <details class="peek"><summary>看指示內容</summary><pre class="prompt" id="gemText">${esc(GEM)}</pre></details></div></li>
+            <li class="step"><span class="stepno">2</span><div class="stepbody"><b>下載給 Gem 的題庫檔</b>
+              <span class="notice">含題目與作答紀錄。之後練習多了，可以再下載一次，到 Gem 裡替換舊檔。</span>
+              <button class="btn ghost" id="gemFile">下載題庫檔（.txt）</button></div></li>
+            <li class="step"><span class="stepno">3</span><div class="stepbody"><b>在 Gemini 建立 Gem</b>
+              <span class="notice">電腦版 Gemini 左側選「探索 Gem」→「新增 Gem」：名稱填「自然科家教」，「指示」貼上第 1 步的內容，「知識」上傳第 2 步的檔案，按「儲存」。</span>
+              <a class="btn ghost" href="https://gemini.google.com/gems/create" target="_blank" rel="noopener">打開 Gemini 建立 Gem</a></div></li>
+            <li class="step"><span class="stepno">4</span><div class="stepbody"><b>把 Gem 出的題目加進網站</b>
+              <span class="notice">Gem 出完題目後，跟它說「整理成網站格式」。按它回覆下方的「複製」，貼到下面，就能在這裡練習、記錄對錯。</span>
+              <textarea id="gemPaste" rows="4" placeholder="把 Gem 回覆的整段內容貼在這裡"></textarea>
+              <button class="btn print" id="gemPasteBtn">加入題庫</button></div></li>
+          </ol>
+          <div class="exam-status" id="gemStatus" aria-live="polite"></div>
+        </div>
+      </section>`;
+  }
+
+  function wireGem() {
+    const st = document.getElementById("gemStatus");
+    document.getElementById("gemCopy").addEventListener("click", () => {
+      const fallback = () => {
+        document.getElementById("gemText").closest("details").open = true;
+        const r = document.createRange(); r.selectNodeContents(document.getElementById("gemText"));
+        const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+        st.textContent = "已選取指示，請按「拷貝」複製。";
+      };
+      try { navigator.clipboard.writeText(GEM).then(() => { st.textContent = "已複製 Gem 指示。"; }, fallback); } catch { fallback(); }
+    });
+    document.getElementById("gemFile").addEventListener("click", () => {
+      const text = JSON.stringify({ name: S.bankName, exportedAt: new Date().toISOString(), questions: S.questions.map(q => {
+        const c = Object.assign({}, q); delete c.figures; return c; }), stats: S.stats });
+      const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
+      const a = document.createElement("a"); a.href = url; a.download = `自然科題庫_給Gemini家教_${todayStr("")}.txt`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      st.textContent = "已下載題庫檔，到 Gem 的「知識」上傳它。";
+    });
+    document.getElementById("gemPasteBtn").addEventListener("click", () => {
+      const ta = document.getElementById("gemPaste");
+      let got = null;
+      if (ta.value.trim()) parseImportText(ta.value, "", imp => { got = imp.questions; });
+      if (!got) { st.textContent = "讀不到題目。請在 Gem 說「整理成網站格式」，再複製它的整段回覆貼上。"; st.classList.add("err"); return; }
+      const { questions, ids } = mergeQuestions(got);
+      if (!saveBank({ name: S.bankName || "我的題庫", questions })) { st.textContent = "儲存失敗：瀏覽器空間不足，或目前是無痕模式。"; st.classList.add("err"); return; }
+      renderHome();
+      const s2 = document.getElementById("gemStatus");
+      s2.innerHTML = `已把 Gem 出的 ${ids.length} 題加進題庫。 <button class="btn small print" id="gemGo">馬上練這 ${ids.length} 題</button>`;
+      document.getElementById("gemGo").addEventListener("click", () => startRun(ids));
+      s2.scrollIntoView({ block: "center" });
+    });
   }
 
   // ---------- boot ----------
