@@ -229,6 +229,21 @@ h1, h2 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
 .howto ol { margin: 0; padding-left: 1.3em; font-size: 14px; display: grid; gap: 4px; }
 .howto textarea { width: 100%; font: 13px/1.5 var(--f-mono); color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 10px; padding: 10px; resize: vertical; }
 .howto .btn { min-height: 44px; font-size: 15px; }
+.howto .field { width: 100%; font: 15px/1.4 var(--f-body); color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.howto a { color: var(--print); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.step { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; }
+.stepno { width: 30px; height: 30px; border-radius: 15px; border: 1.5px solid var(--print); color: var(--print); display: grid; place-items: center; font-family: var(--f-mono); font-size: 14px; margin-top: 1px; }
+.stepbody { display: grid; gap: 8px; min-width: 0; }
+.stepbody b { font-size: 16px; }
+.stepbody .btn { min-height: 44px; font-size: 15px; }
+.stepbody textarea { width: 100%; font: 13px/1.5 var(--f-mono); color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 10px; padding: 10px; resize: vertical; }
+.ailinks { display: flex; gap: 8px; flex-wrap: wrap; }
+.ailinks .btn { flex: 1 1 90px; min-height: 42px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 14px; color: var(--ink); }
+.peek summary { cursor: pointer; font-size: 13.5px; color: var(--muted); }
+.subblock { display: grid; gap: 8px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.subblock summary { cursor: pointer; }
+.subblock[open] { gap: 10px; }
 .prompt { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.6 var(--f-mono); background: var(--paper); border-radius: 10px; padding: 10px; max-height: 220px; overflow: auto; }
 label.btn { display: inline-flex; align-items: center; justify-content: center; text-align: center; }
 
@@ -559,18 +574,22 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
       </section>
 
       ${PUBLIC ? `<section class="section">
+        <h2>新增題目 <small>用 AI 整理題本照片</small></h2>
+        <div class="exam-box">
+          ${guideHtml("home")}
+          <div class="exam-status" id="bankStatus" aria-live="polite"></div>
+        </div>
+      </section>
+      <section class="section">
         <h2>題庫管理 <small>題庫只存在這台裝置</small></h2>
         <div class="exam-box">
           <p>目前題庫 ${S.questions.length} 題${S.bankName ? `（${esc(S.bankName)}）` : ""}。換手機或清除瀏覽器資料前，記得先匯出備份。</p>
           <div class="exam-actions">
-            <label class="btn" for="importFile" id="importLabel" tabindex="0">匯入題庫檔案</label>
             <button class="btn ghost" id="backupBtn">匯出備份</button>
             <button class="btn ghost" id="clearBtn">清除題庫</button>
           </div>
-          <input type="file" id="importFile" accept=".json,application/json" hidden>
-          <div class="exam-status" id="bankStatus" aria-live="polite"></div>
           <div class="exam-actions" id="importChoice" hidden></div>
-          ${bankHelpHtml("home")}
+          ${otherWaysHtml("home")}
         </div>
       </section>` : ""}
 
@@ -1124,34 +1143,184 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
     "10. explain 用繁體中文逐選項說明對錯，最後一行寫「- 觀念重點：」。",
   ].join("\n");
 
-  function bankHelpHtml(p) {
+  // ---------- public mode: photo → questions via the viewer's own Gemini API key ----------
+  const AI = { busy: false };
+  const aiKey = () => store.get("nq_gkey", "");
+  const aiModel = () => store.get("nq_gmodel", "gemini-2.5-flash");
+
+  function photoHtml(p) {
+    const key = aiKey();
     return `
-      <details class="howto" id="${p}Paste">
-        <summary>貼上題目資料（從 AI 複製）</summary>
-        <textarea id="${p}PasteText" rows="6" placeholder="把 AI 回覆的整段題目資料貼在這裡"></textarea>
-        <button class="btn" id="${p}PasteBtn">匯入貼上的內容</button>
-      </details>
-      <details class="howto" id="${p}How">
-        <summary>怎麼建立自己的題庫？</summary>
-        <ol>
-          <li>按下方「複製建檔提示詞」。</li>
-          <li>打開 Gemini、Claude 或 ChatGPT 等可以看照片的 AI（免費版也可以），貼上提示詞，再附上題本照片送出。一次 2～4 張照片比較穩定。</li>
-          <li>AI 回覆後，複製它回覆的整段題目資料，回到這裡用「貼上題目資料」匯入。題目很多時，請它分批輸出。</li>
-          <li>答案標「AI 解答（待確認）」的題目，練習時請自己再核對一次。</li>
-        </ol>
-        <button class="btn ghost" id="${p}CopyPrompt">複製建檔提示詞</button>
-        <pre class="prompt" id="${p}PromptText">${esc(PROMPT)}</pre>
+      <details class="subblock peek" id="${p}Photo">
+        <summary><b>拍照自動建檔（需要 Gemini API 金鑰）</b></summary>
+        ${key ? `
+          <input type="text" id="${p}BookName" class="field" placeholder="題本名稱（選填，例如：第二次模擬考）" autocomplete="off">
+          <label class="btn print" for="${p}Photos" id="${p}PhotoLabel" tabindex="0">選擇題本照片</label>
+          <input type="file" id="${p}Photos" accept="image/*" multiple hidden>
+          <p class="notice">可以一次選多張，每 3 張送一次辨識。辨識完的題目會直接加進題庫，答案標「AI 解答（待確認）」的請自己核對。</p>
+          <button class="linkish" id="${p}KeyReset">更換或移除 Gemini 金鑰</button>`
+        : `
+          <ol>
+            <li>打開 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>，用 Google 帳號登入。</li>
+            <li>按「Create API key」，建立後複製那串金鑰。</li>
+            <li>貼到下面按「儲存金鑰」。金鑰只存在這台裝置，不會傳到其他地方。</li>
+          </ol>
+          <input type="password" id="${p}Key" class="field" placeholder="貼上 Gemini API 金鑰" autocomplete="off">
+          <button class="btn" id="${p}KeySave">儲存金鑰</button>
+          <p class="notice">Gemini 免費額度有每日上限；用完隔天就會恢復。</p>`}
       </details>`;
   }
 
-  function wireBankHelp(p, onReady) {
+  async function shrinkImage(file) {
+    const MAX = 1800;
+    let src, w, h;
+    try { src = await createImageBitmap(file); w = src.width; h = src.height; }
+    catch {
+      src = await new Promise((res, rej) => {
+        const img = new Image(); img.onload = () => res(img); img.onerror = rej;
+        img.src = URL.createObjectURL(file);
+      });
+      w = src.naturalWidth; h = src.naturalHeight;
+    }
+    const k = Math.min(1, MAX / Math.max(w, h));
+    const c = document.createElement("canvas");
+    c.width = Math.round(w * k); c.height = Math.round(h * k);
+    c.getContext("2d").drawImage(src, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", 0.85).split(",")[1];
+  }
+
+  async function geminiExtract(images, bookName) {
+    const parts = [{ text: PROMPT + (bookName ? `\n題本名稱：${bookName}` : "") + "\n請直接輸出 JSON 物件。" }];
+    images.forEach(data => parts.push({ inline_data: { mime_type: "image/jpeg", data } }));
+    const call = model => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": aiKey() },
+      body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: { temperature: 0.2, responseMimeType: "application/json" } }),
+    });
+    let res;
+    try {
+      res = await call(aiModel());
+      // 預設模型若被 Google 停用，自動改用最新的 Flash 模型並記住
+      if (res.status === 404 && aiModel() !== "gemini-flash-latest") {
+        res = await call("gemini-flash-latest");
+        if (res.ok) store.set("nq_gmodel", "gemini-flash-latest");
+      }
+    } catch { throw new Error("連不上 Gemini，請確認網路連線。"); }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = (data.error && data.error.message) || "";
+      if (res.status === 400 && /api key/i.test(msg)) throw new Error("Gemini 金鑰無效，請按「更換或移除 Gemini 金鑰」重新設定。");
+      if (res.status === 403) throw new Error("這組金鑰沒有使用 Gemini 的權限，請到 Google AI Studio 重新建立金鑰。");
+      if (res.status === 429) throw new Error("今天的 Gemini 免費額度用完了，或送出太快。請稍後或明天再試。");
+      throw new Error(`Gemini 回傳錯誤（${res.status}）。請稍後再試。`);
+    }
+    const text = ((data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || []).map(x => x.text || "").join("");
+    if (!text) throw new Error("Gemini 沒有回傳題目，可能照片太模糊，請換張照片再試。");
+    return text;
+  }
+
+  async function runPhotoImport(p, files) {
+    if (AI.busy || !files.length) return;
+    AI.busy = true;
+    const bookName = (document.getElementById(p + "BookName") || {}).value || "";
+    const collected = [];
+    let failed = 0, lastErr = "";
+    try {
+      const imgs = [];
+      for (let i = 0; i < files.length; i++) {
+        bankStatus(`正在處理照片（${i + 1} / ${files.length}）…`);
+        try { imgs.push(await shrinkImage(files[i])); } catch { failed++; }
+      }
+      for (let i = 0; i < imgs.length; i += 3) {
+        bankStatus(`Gemini 正在辨識第 ${i + 1}～${Math.min(i + 3, imgs.length)} 張（共 ${imgs.length} 張），每批約需 20～60 秒…`);
+        try {
+          const text = await geminiExtract(imgs.slice(i, i + 3), bookName);
+          parseImportText(text, bookName, imp => collected.push(...imp.questions));
+        } catch (e) { failed++; lastErr = e.message; if (/金鑰|額度|權限/.test(e.message)) break; }
+      }
+    } finally { AI.busy = false; }
+    if (!collected.length) { bankStatus(lastErr || "沒有辨識出題目，請換清楚一點的照片再試。", true); return; }
+    applyImport({ name: bookName || "拍照建檔", questions: collected, skipped: 0 }, S.questions.length ? "merge" : "replace");
+    bankStatus(`已從照片新增 ${collected.length} 題，題庫共 ${S.questions.length} 題。${failed ? `有部分照片沒有成功：${lastErr || "請重新上傳那幾張"}` : "建議練習時順便核對答案。"}`, !!failed);
+  }
+
+  function wirePhoto(p) {
+    const save = document.getElementById(p + "KeySave");
+    if (save) save.addEventListener("click", () => {
+      const v = document.getElementById(p + "Key").value.trim();
+      if (v.length < 20) { bankStatus("金鑰看起來不完整，請重新複製。", true); return; }
+      store.set("nq_gkey", v);
+      S.view === "welcome" ? renderWelcome() : renderHome();
+      bankStatus("已儲存金鑰，可以開始拍照建檔了。");
+    });
+    const reset = document.getElementById(p + "KeyReset");
+    if (reset) reset.addEventListener("click", () => { store.del("nq_gkey"); S.view === "welcome" ? renderWelcome() : renderHome(); });
+    const input = document.getElementById(p + "Photos");
+    if (input) {
+      document.getElementById(p + "PhotoLabel").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
+      input.addEventListener("change", () => { const files = [...input.files]; input.value = ""; runPhotoImport(p, files); });
+    }
+  }
+
+  const AI_LINKS = [
+    ["Gemini", "https://gemini.google.com/app"],
+    ["ChatGPT", "https://chatgpt.com/"],
+    ["Claude", "https://claude.ai/new"],
+  ];
+
+  // 主要流程：教使用者用自己的 AI 對話整理題目，再貼回來
+  function guideHtml(p) {
+    return `
+      <ol class="steps">
+        <li class="step"><span class="stepno">1</span><div class="stepbody">
+          <b>複製建檔提示詞</b>
+          <span class="notice">這段提示詞會告訴 AI 怎麼把題目整理成這個網站看得懂的格式。</span>
+          <button class="btn print" id="${p}CopyPrompt">複製建檔提示詞</button>
+          <details class="peek"><summary>看提示詞內容</summary><pre class="prompt" id="${p}PromptText">${esc(PROMPT)}</pre></details>
+        </div></li>
+        <li class="step"><span class="stepno">2</span><div class="stepbody">
+          <b>打開 AI，貼上提示詞並附上題本照片</b>
+          <span class="notice">任何可以看照片的 AI 都可以，免費版也行。一次附 2～4 張照片最穩定。</span>
+          <div class="ailinks">${AI_LINKS.map(([n, u]) => `<a class="btn ghost" href="${u}" target="_blank" rel="noopener">打開 ${n}</a>`).join("")}</div>
+        </div></li>
+        <li class="step"><span class="stepno">3</span><div class="stepbody">
+          <b>複製 AI 的回覆</b>
+          <span class="notice">按 AI 回覆下方的「複製」按鈕，複製整段。如果題目很多被截斷，跟 AI 說「繼續」，再分批複製貼上。</span>
+        </div></li>
+        <li class="step"><span class="stepno">4</span><div class="stepbody">
+          <b>貼到這裡，加入題庫</b>
+          <textarea id="${p}PasteText" rows="5" placeholder="把 AI 回覆的整段內容貼在這裡"></textarea>
+          <button class="btn print" id="${p}PasteBtn">加入題庫</button>
+          <span class="notice">標「AI 解答（待確認）」的答案，練習時請自己再核對一次。</span>
+        </div></li>
+      </ol>`;
+  }
+
+  function otherWaysHtml(p) {
+    return `
+      <details class="howto" id="${p}Other">
+        <summary>其他方式：拍照自動建檔、匯入檔案或備份</summary>
+        ${photoHtml(p)}
+        <div class="subblock">
+          <b>匯入題庫檔案或備份檔</b>
+          <span class="notice">還原「匯出備份」的檔案，或匯入別人整理好的 .json 題庫檔案。</span>
+          <label class="btn ghost" for="${p}File" id="${p}FileLabel" tabindex="0">選擇檔案</label>
+          <input type="file" id="${p}File" accept=".json,application/json" hidden>
+        </div>
+      </details>`;
+  }
+
+  function wireGuide(p, onReady) {
     document.getElementById(p + "PasteBtn").addEventListener("click", () => {
       const ta = document.getElementById(p + "PasteText");
+      if (!ta.value.trim()) { bankStatus("請先把 AI 的回覆貼到上面的框框裡。", true); return; }
       parseImportText(ta.value, "", imp => { ta.value = ""; onReady(imp); });
     });
     document.getElementById(p + "CopyPrompt").addEventListener("click", () => {
-      const done = () => bankStatus("已複製建檔提示詞，貼到 AI 對話就能使用。");
+      const done = () => bankStatus("已複製建檔提示詞。下一步：打開 AI，貼上提示詞並附上題本照片。");
       const fallback = () => {
+        const peek = document.querySelector(`#${p}PromptText`).closest("details");
+        if (peek) peek.open = true;
         const pre = document.getElementById(p + "PromptText");
         const r = document.createRange(); r.selectNodeContents(pre);
         const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
@@ -1161,10 +1330,14 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
     });
   }
 
+  function wireOtherWays(p, onFile) {
+    wirePhoto(p);
+    const input = document.getElementById(p + "File");
+    document.getElementById(p + "FileLabel").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
+    input.addEventListener("change", () => readImport(input.files[0], imp => { input.value = ""; onFile(imp); }));
+  }
+
   function wireBankTools() {
-    const input = document.getElementById("importFile");
-    const label = document.getElementById("importLabel");
-    label.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
     const choose = imp => {
       const box = document.getElementById("importChoice");
       box.hidden = false; box.innerHTML = "";
@@ -1176,8 +1349,8 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
         box.appendChild(b);
       });
     };
-    input.addEventListener("change", () => readImport(input.files[0], imp => { input.value = ""; choose(imp); }));
-    wireBankHelp("home", choose);
+    wireGuide("home", imp => applyImport(imp, S.questions.length ? "merge" : "replace"));
+    wireOtherWays("home", choose);
     document.getElementById("backupBtn").addEventListener("click", () => {
       downloadText(`自然科題庫備份_${todayStr("")}.json`, JSON.stringify({
         format: "自然科題庫備份", exportedAt: new Date().toISOString(), name: S.bankName,
@@ -1201,33 +1374,33 @@ label.btn { display: inline-flex; align-items: center; justify-content: center; 
       <header class="masthead">
         <span class="eyebrow">學測自然・個人題庫</span>
         <h1>自然科題庫練習</h1>
-        <span class="sub">匯入自己的題庫，隨機出題、即時批改、錯題本、一鍵生成考卷。</span>
+        <span class="sub">把寫過的題本拍下來，用 AI 整理成自己的題庫，隨機出題、即時批改、錯題本、一鍵生成考卷。</span>
       </header>
       <section class="section">
-        <h2>開始使用</h2>
+        <h2>用 AI 建立你的題庫 <small>4 個步驟</small></h2>
         <div class="exam-box">
-          <p>題庫只存在你這台裝置的瀏覽器裡，不會上傳到任何地方。</p>
-          <div class="exam-actions">
-            <label class="btn print" for="welcomeFile" id="welcomeImport" tabindex="0">匯入題庫檔案</label>
-            <button class="btn ghost" id="sampleBtn">試用範例題</button>
-          </div>
-          <input type="file" id="welcomeFile" accept=".json,application/json" hidden>
+          ${guideHtml("welcome")}
           <div class="exam-status" id="welcomeStatus" aria-live="polite"></div>
-          ${bankHelpHtml("welcome")}
+        </div>
+      </section>
+      <section class="section">
+        <h2>還沒有題本照片？</h2>
+        <div class="exam-box">
+          <p>先用 4 題範例題看看練習的樣子，之後隨時可以加入自己的題目。</p>
+          <div class="exam-actions"><button class="btn ghost" id="sampleBtn">試用範例題</button></div>
+          ${otherWaysHtml("welcome")}
         </div>
       </section>
       <section class="section">
         <h2>小提醒</h2>
         <div class="history">
-          <div class="row"><span class="mono muted">1</span><span>題庫檔案是 .json 格式，可以從你的題庫工具匯出。</span><span></span></div>
-          <div class="row"><span class="mono muted">2</span><span>用手機瀏覽器「加入主畫面」，就能像 App 一樣打開。</span><span></span></div>
+          <div class="row"><span class="mono muted">1</span><span>題庫只存在你這台裝置的瀏覽器，不會上傳到任何地方。</span><span></span></div>
+          <div class="row"><span class="mono muted">2</span><span>用手機瀏覽器「加入主畫面」，就能像 App 一樣打開，資料也比較不會被清除。</span><span></span></div>
           <div class="row"><span class="mono muted">3</span><span>換手機或清除瀏覽器資料前，先在首頁「匯出備份」。</span><span></span></div>
         </div>
       </section>`;
-    const input = document.getElementById("welcomeFile");
-    document.getElementById("welcomeImport").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
-    input.addEventListener("change", () => readImport(input.files[0], imp => { input.value = ""; applyImport(imp, "replace"); }));
-    wireBankHelp("welcome", imp => applyImport(imp, "replace"));
+    wireGuide("welcome", imp => applyImport(imp, "replace"));
+    wireOtherWays("welcome", imp => applyImport(imp, "replace"));
     document.getElementById("sampleBtn").addEventListener("click", () => {
       if (saveBank({ name: SAMPLE.name, questions: cleanQuestions(SAMPLE.questions) })) renderHome();
       else bankStatus("儲存失敗：這台裝置的瀏覽器空間不足，或目前是無痕模式。", true);
