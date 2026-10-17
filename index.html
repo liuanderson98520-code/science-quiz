@@ -1,0 +1,1261 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="題庫練習"><meta name="theme-color" content="#B3365C"><style>[hidden]{display:none!important}body{margin:0}</style></head><body><script>window.__PUBLIC__ = true;</script>
+<title>自然科題庫練習</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap">
+<style>
+/* Layout: one narrow column like an answer sheet; question card on top, sticky action bar at the bottom.
+   The option "bubbles" borrow the 2B-pencil answer card (答案卡): print-colored outlines, graphite fill when marked. */
+:root {
+  --paper: #EEF0EB;
+  --card: #FAFBF8;
+  --ink: #1D2427;
+  --muted: #5B6467;
+  --line: #D5D9D0;
+  --print: #B3365C;
+  --print-soft: #F3DCE3;
+  --graphite: #2A2E33;
+  --ok: #2B7A4B;
+  --ok-bg: #E2F0E6;
+  --bad: #B93A2D;
+  --bad-bg: #F7E2DE;
+  --phy: #345F96;
+  --che: #9A6A12;
+  --bio: #3A7F45;
+  --ear: #85563A;
+  --shadow: 0 1px 2px rgba(29,36,39,.06), 0 6px 18px rgba(29,36,39,.06);
+  --f-display: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+  --f-body: "Noto Sans TC", "PingFang TC", "Heiti TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14181A; --card: #1C2225; --ink: #E5E8E3; --muted: #9AA3A6; --line: #313A3D;
+    --print: #E27D9C; --print-soft: #3A2430; --graphite: #E5E8E3;
+    --ok: #71C795; --ok-bg: #1B3325; --bad: #F0897C; --bad-bg: #3B2320;
+    --phy: #8DB3E6; --che: #E2B45C; --bio: #86C98F; --ear: #D19E7E;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14181A; --card: #1C2225; --ink: #E5E8E3; --muted: #9AA3A6; --line: #313A3D;
+  --print: #E27D9C; --print-soft: #3A2430; --graphite: #E5E8E3;
+  --ok: #71C795; --ok-bg: #1B3325; --bad: #F0897C; --bad-bg: #3B2320;
+  --phy: #8DB3E6; --che: #E2B45C; --bio: #86C98F; --ear: #D19E7E;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { background: var(--paper); }
+body {
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 16px;
+  line-height: 1.75;
+  -webkit-text-size-adjust: 100%;
+}
+.wrap { max-width: 680px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 140px; }
+button { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible, label:focus-within { outline: 2px solid var(--print); outline-offset: 2px; }
+h1, h2 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.eyebrow { font-size: 12px; letter-spacing: .12em; color: var(--print); font-weight: 700; }
+
+/* ---------- home ---------- */
+.masthead { display: grid; gap: 6px; padding-block: 8px 20px; border-bottom: 2px solid var(--print); margin-bottom: 20px; }
+.masthead h1 { font-size: clamp(30px, 8vw, 40px); font-weight: 900; letter-spacing: .04em; }
+.masthead .sub { color: var(--muted); font-size: 14px; }
+.section { display: grid; gap: 12px; margin-bottom: 26px; }
+.section h2 { font-size: 18px; display: flex; align-items: baseline; gap: 10px; }
+.section h2 small { font-family: var(--f-body); font-weight: 400; font-size: 13px; color: var(--muted); }
+
+.subjects { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.subj {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--line);
+  background: var(--card); cursor: pointer; text-align: left; min-height: 56px;
+}
+.subj .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
+.subj .name { font-weight: 700; font-size: 17px; }
+.subj .n { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+.subj[aria-pressed="true"] { border-color: var(--c); box-shadow: inset 0 0 0 1.5px var(--c); }
+.subj[aria-pressed="false"] { opacity: .55; }
+.subj[aria-pressed="false"] .dot { background: transparent; box-shadow: inset 0 0 0 2px var(--c); }
+
+.count-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.count-row input[type=range] { width: 100%; accent-color: var(--print); }
+.count-row .val { font-family: var(--f-mono); font-size: 26px; min-width: 2.2ch; text-align: right; color: var(--print); }
+
+.seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 4px; gap: 4px; }
+.seg button { border: 0; background: transparent; border-radius: 9px; padding: 10px 6px; cursor: pointer; font-size: 14px; line-height: 1.35; }
+.seg button small { display: block; color: var(--muted); font-size: 11.5px; }
+.seg button[aria-pressed="true"] { background: var(--print); color: #fff; }
+.seg button[aria-pressed="true"] small { color: rgba(255,255,255,.85); }
+:root[data-theme="dark"] .seg button[aria-pressed="true"], :root[data-theme="dark"] .seg button[aria-pressed="true"] small { color: #1C2225; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seg button[aria-pressed="true"], :root:not([data-theme="light"]) .seg button[aria-pressed="true"] small { color: #1C2225; } }
+
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px 14px; cursor: pointer; }
+.switch input { width: 22px; height: 22px; accent-color: var(--print); }
+
+.stat-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.stat { background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 2px; }
+.stat b { font-family: var(--f-mono); font-size: 22px; font-weight: 500; }
+.stat span { font-size: 12.5px; color: var(--muted); }
+.stat.warn b { color: var(--bad); }
+
+.history { display: grid; gap: 0; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; }
+.history .row { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--line); align-items: center; font-size: 14px; }
+.history .row:first-child { border-top: 0; }
+.history .empty { padding: 14px; color: var(--muted); font-size: 14px; }
+
+.resume { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; background: var(--print-soft); border-radius: 12px; padding: 12px 14px; }
+.notice { font-size: 13px; color: var(--muted); }
+
+/* ---------- action bar ---------- */
+.bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid var(--line);
+}
+.bar .inner { max-width: 680px; margin: 0 auto; display: flex; gap: 10px; }
+.btn {
+  flex: 1; min-height: 50px; border-radius: 12px; border: 1.5px solid var(--ink);
+  background: var(--ink); color: var(--paper); font-weight: 700; font-size: 16px; cursor: pointer; padding: 0 16px;
+}
+.btn.ghost { background: transparent; color: var(--ink); flex: 0 0 auto; }
+.btn.print { background: var(--print); border-color: var(--print); color: #fff; }
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+.btn.small { min-height: 40px; font-size: 14px; flex: 0 0 auto; }
+.linkish { background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 6px 0; font-size: 14px; }
+
+/* ---------- quiz ---------- */
+.qtop { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 4; background: var(--paper); padding-block: 8px 10px; display: grid; gap: 8px; }
+.qtop .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; }
+.qtop .pos { font-family: var(--f-mono); font-size: 15px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 700; color: var(--c); box-shadow: inset 0 0 0 1.5px var(--c); }
+.progress { height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--print); transition: width .25s ease; }
+.qtop .quit { margin-left: auto; }
+
+.card { background: var(--card); border-radius: 14px; box-shadow: var(--shadow); padding: 18px 16px; display: grid; gap: 14px; min-width: 0; }
+.card .src { font-size: 12.5px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
+.stem { display: grid; gap: 10px; min-width: 0; overflow-wrap: anywhere; }
+.stem p { margin: 0; }
+.stem .passage { background: var(--paper); border-radius: 10px; padding: 10px 12px; font-size: 15px; }
+.stem .figure { border-left: 3px solid var(--print); padding: 4px 0 4px 12px; font-size: 15px; color: var(--muted); }
+.stem .lbl { font-weight: 700; color: var(--ink); }
+.tbl { overflow-x: auto; }
+.tbl table { border-collapse: collapse; font-size: 14px; min-width: 100%; }
+.tbl th, .tbl td { border: 1px solid var(--line); padding: 6px 8px; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tbl th { background: var(--paper); font-weight: 700; }
+.need { font-size: 13px; font-weight: 700; color: var(--print); }
+
+.opts { display: grid; gap: 8px; }
+.opt {
+  display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start;
+  text-align: left; background: transparent; border: 1.5px solid var(--line); border-radius: 12px;
+  padding: 12px; cursor: pointer; line-height: 1.6; min-width: 0;
+}
+.opt .t { min-width: 0; overflow-wrap: anywhere; padding-top: 1px; }
+.bubble {
+  width: 40px; height: 26px; border-radius: 13px; border: 1.5px solid var(--print);
+  display: grid; place-items: center; font-family: var(--f-mono); font-size: 13px; color: var(--print);
+  position: relative; overflow: hidden; flex: none;
+}
+.opt[aria-pressed="true"] { border-color: var(--graphite); }
+.opt[aria-pressed="true"] .bubble {
+  border-color: var(--graphite); color: transparent;
+  background: repeating-linear-gradient(-62deg, var(--graphite) 0 2px, color-mix(in srgb, var(--graphite) 82%, transparent) 2px 3px);
+}
+.opt.is-key { border-color: var(--ok); background: var(--ok-bg); }
+.opt.is-key .bubble { border-color: var(--ok); color: var(--ok); }
+.opt.is-key[aria-pressed="true"] .bubble { background: var(--ok); color: var(--card); }
+.opt.is-miss { border-color: var(--bad); background: var(--bad-bg); }
+.opt.is-miss .bubble { border-color: var(--bad); background: var(--bad); color: var(--card); }
+.opts.locked .opt { cursor: default; }
+
+.verdict { border-radius: 12px; padding: 12px 14px; display: grid; gap: 2px; }
+.verdict b { font-size: 18px; font-family: var(--f-display); }
+.verdict.ok { background: var(--ok-bg); color: var(--ok); }
+.verdict.bad { background: var(--bad-bg); color: var(--bad); }
+.verdict.self { background: var(--print-soft); color: var(--ink); }
+.verdict .ans { color: var(--ink); font-size: 15px; white-space: pre-line; }
+
+.explain { display: grid; gap: 8px; font-size: 15px; border-top: 1px dashed var(--line); padding-top: 12px; overflow-wrap: anywhere; }
+.explain p { margin: 0; }
+.explain ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+.explain .key { background: var(--print-soft); border-radius: 10px; padding: 8px 12px; }
+.explain .h { font-weight: 700; }
+.badge-ai { font-size: 12px; padding: 1px 8px; border-radius: 6px; background: var(--paper); color: var(--muted); border: 1px solid var(--line); }
+
+/* ---------- result ---------- */
+.score { display: grid; justify-items: center; gap: 4px; padding-block: 18px 8px; }
+.score .big { font-family: var(--f-display); font-size: 64px; font-weight: 900; line-height: 1; }
+.score .big small { font-size: 28px; color: var(--muted); }
+.rlist { display: grid; gap: 8px; }
+.ritem { background: var(--card); border-radius: 12px; border: 1.5px solid var(--line); overflow: hidden; }
+.ritem summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: auto auto 1fr; gap: 10px; align-items: center; padding: 10px 12px; }
+.ritem summary::-webkit-details-marker { display: none; }
+.ritem .mark { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+.ritem.ok .mark { background: var(--ok-bg); color: var(--ok); }
+.ritem.bad .mark { background: var(--bad-bg); color: var(--bad); }
+.ritem .snip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; min-width: 0; }
+.ritem .body { padding: 0 12px 12px; }
+
+.loading { padding-block: 60px; text-align: center; color: var(--muted); }
+
+/* redrawn figures (SVG strokes use currentColor) */
+.fig { margin: 0; display: grid; gap: 4px; justify-items: center; color: var(--ink); background: var(--paper); border-radius: 10px; padding: 10px 8px 6px; min-width: 0; }
+.fig svg { width: 100%; max-width: 460px; height: auto; display: block; }
+.fig figcaption { font-size: 11.5px; color: var(--muted); }
+
+/* ---------- exam generator ---------- */
+.exam-box { background: var(--card); border: 1.5px dashed var(--print); border-radius: 12px; padding: 14px; display: grid; gap: 10px; }
+.exam-box p { margin: 0; font-size: 14px; color: var(--muted); }
+.exam-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.exam-actions .btn { flex: 1 1 140px; min-height: 46px; font-size: 15px; }
+.exam-status { font-size: 14px; color: var(--ink); min-height: 1.2em; }
+.exam-status.err { color: var(--bad); }
+
+/* public mode: bank help */
+.howto { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 8px; }
+.howto summary { cursor: pointer; font-weight: 700; font-size: 15px; }
+.howto[open] { gap: 10px; }
+.howto ol { margin: 0; padding-left: 1.3em; font-size: 14px; display: grid; gap: 4px; }
+.howto textarea { width: 100%; font: 13px/1.5 var(--f-mono); color: var(--ink); background: var(--paper); border: 1.5px solid var(--line); border-radius: 10px; padding: 10px; resize: vertical; }
+.howto .btn { min-height: 44px; font-size: 15px; }
+.prompt { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.6 var(--f-mono); background: var(--paper); border-radius: 10px; padding: 10px; max-height: 220px; overflow: auto; }
+label.btn { display: inline-flex; align-items: center; justify-content: center; text-align: center; }
+
+/* on-screen answer key */
+.key-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; }
+.key-grid a { display: flex; gap: 8px; align-items: baseline; padding: 8px 10px; background: var(--card); border: 1.5px solid var(--line); border-radius: 10px; color: var(--ink); text-decoration: none; font-weight: 700; }
+.key-grid a b { font-family: var(--f-mono); font-weight: 500; color: var(--muted); font-size: 13px; }
+.key-item { scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 12px); }
+.key-item .ans-line { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.key-item .ans-line strong { font-family: var(--f-display); font-size: 18px; color: var(--ok); }
+.key-item details summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+.key-item details[open] summary { margin-bottom: 8px; }
+.key-item .qopts { display: grid; gap: 2px; font-size: 15px; }
+
+/* offscreen A4 pages rendered into the PDF (fixed print colors, independent of theme) */
+.pdf-root { position: absolute; left: -12000px; top: 0; width: 794px; }
+.pdf-root .pg { width: 794px; min-height: 1123px; padding: 56px 60px 48px; background: #ffffff; color: #141414; font-family: var(--f-body); font-size: 15px; line-height: 1.7; position: relative; box-sizing: border-box; }
+.pdf-root .pg + .pg { margin-top: 20px; }
+.pdf-root .pg-f { position: absolute; left: 60px; right: 60px; bottom: 22px; text-align: center; font-size: 11px; color: #777; }
+.pdf-root .blk { padding-bottom: 14px; }
+.pdf-root .ex-h { border-bottom: 2px solid #141414; padding-bottom: 10px; display: grid; gap: 4px; }
+.pdf-root .ex-t { font-family: var(--f-display); font-size: 26px; font-weight: 900; letter-spacing: .08em; }
+.pdf-root .ex-m, .pdf-root .ex-n { font-size: 13.5px; color: #333; }
+.pdf-root .ex-sec { font-family: var(--f-display); font-weight: 700; font-size: 17px; border-left: 4px solid #141414; padding-left: 8px; }
+.pdf-root .ex-qh { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.pdf-root .ex-tag { font-size: 12px; color: #555; border: 1px solid #999; border-radius: 4px; padding: 0 6px; }
+.pdf-root .ex-id { font-family: var(--f-mono); font-size: 11px; color: #888; }
+.pdf-root .stem { display: grid; gap: 6px; }
+.pdf-root .stem p { margin: 0; }
+.pdf-root .stem .passage { background: #f2f2f2; color: #141414; border-radius: 6px; padding: 8px 10px; font-size: 14px; }
+.pdf-root .stem .figure { border-left: 3px solid #999; padding-left: 10px; color: #444; font-size: 14px; }
+.pdf-root .stem .lbl { color: #141414; }
+.pdf-root .tbl table { border-collapse: collapse; font-size: 13px; }
+.pdf-root .tbl th, .pdf-root .tbl td { border: 1px solid #888; padding: 3px 6px; text-align: center; white-space: nowrap; }
+.pdf-root .tbl th { background: #eee; }
+.pdf-root .ex-opts { display: grid; gap: 2px; padding-left: 4px; margin-top: 4px; }
+.pdf-root .ex-ansbox { border: 1px solid #999; border-radius: 6px; height: 150px; margin-top: 6px; padding: 4px 8px; font-size: 12px; color: #888; }
+.pdf-root .ex-grid { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid #888; border-left: 1px solid #888; }
+.pdf-root .ex-grid div { border-right: 1px solid #888; border-bottom: 1px solid #888; padding: 4px 8px; font-size: 13.5px; display: flex; gap: 8px; }
+.pdf-root .ex-grid b { font-family: var(--f-mono); font-weight: 500; color: #666; min-width: 2ch; }
+.pdf-root .ex-a { white-space: pre-line; font-weight: 700; }
+.pdf-root .explain { border-top: 0; padding-top: 4px; font-size: 14px; gap: 4px; }
+.pdf-root .explain .key { background: #f2f2f2; color: #141414; }
+.pdf-root .ex-src { font-size: 11.5px; color: #888; }
+.pdf-root .fig { background: transparent; color: #141414; padding: 4px 0; }
+.pdf-root .fig svg { max-width: 420px; }
+.pdf-root .fig figcaption { color: #888; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main class="wrap" id="app">
+  <div class="loading">正在載入題庫…</div>
+</main>
+<div class="bar" id="bar" hidden><div class="inner" id="barInner"></div></div>
+
+<script>
+(() => {
+  const SUBJECTS = [
+    { name: "物理", color: "var(--phy)" },
+    { name: "化學", color: "var(--che)" },
+    { name: "生物", color: "var(--bio)" },
+    { name: "地科", color: "var(--ear)" },
+  ];
+  const colorOf = s => (SUBJECTS.find(x => x.name === s) || {}).color || "var(--muted)";
+  const MASTER_STREAK = 3;
+
+  const app = document.getElementById("app");
+  const bar = document.getElementById("bar");
+  const barInner = document.getElementById("barInner");
+
+  // 公開版：網站不含題目，題庫由使用者匯入並存在自己的瀏覽器
+  const PUBLIC = !!window.__PUBLIC__;
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
+    del(k) { try { localStorage.removeItem(k); } catch {} },
+  };
+
+  const S = {
+    questions: [],
+    byId: new Map(),
+    stats: {},          // id -> {right, wrong, streak, mastered, lastChoice, lastAt, lastResult}
+    sessions: [],       // newest first
+    db: null,
+    prefs: Object.assign({ subjects: SUBJECTS.map(s => s.name), count: 10, mode: "all", open: true }, store.get("nq_prefs", {})),
+    run: null,          // {ids, idx, answers: {id: {choice, correct, done}}, startedAt}
+    view: "home",
+  };
+
+  // ---------- data ----------
+  const writeQueue = new Map();
+  function queueWrite(path, fn) {
+    const prev = writeQueue.get(path) || Promise.resolve();
+    const next = prev.then(fn).catch(() => {});
+    writeQueue.set(path, next);
+    return next;
+  }
+
+  async function connectDb() {
+    try {
+      if (!window.claude || typeof window.claude.use !== "function") return;
+      const db = await window.claude.use("db");
+      if (!db) return;
+      S.db = db;
+      db.collection("stats").onSnapshot(snap => {
+        const next = {};
+        snap.docs.forEach(d => { if (d.exists) next[d.id] = d.data(); });
+        S.stats = next;
+        if (S.view === "home") renderHome();
+      }, () => {});
+      db.collection("sessions").orderBy("at", "desc").limit(10).onSnapshot(snap => {
+        S.sessions = snap.docs.filter(d => d.exists).map(d => d.data());
+        if (S.view === "home") renderHome();
+      }, () => {});
+    } catch { /* stay on local storage */ }
+  }
+
+  function loadLocal() {
+    S.stats = store.get("nq_stats", {});
+    S.sessions = store.get("nq_sessions", []);
+  }
+
+  function recordAnswer(id, correct, choice) {
+    const prev = S.stats[id] || { right: 0, wrong: 0, streak: 0, mastered: false };
+    const q = S.byId.get(id);
+    const next = {
+      subject: q ? q.subject : "",
+      right: (prev.right || 0) + (correct ? 1 : 0),
+      wrong: (prev.wrong || 0) + (correct ? 0 : 1),
+      streak: correct ? (prev.streak || 0) + 1 : 0,
+      lastResult: correct ? "right" : "wrong",
+      lastChoice: choice || "",
+      lastAt: new Date().toISOString(),
+    };
+    next.mastered = next.wrong > 0 && next.streak >= MASTER_STREAK;
+    S.stats = Object.assign({}, S.stats, { [id]: next });
+    if (S.db) queueWrite("stats/" + id, () => S.db.doc("stats/" + id).set(next));
+    else store.set("nq_stats", S.stats);
+  }
+
+  function recordSession(run) {
+    const ids = run.ids;
+    const wrong = ids.filter(id => run.answers[id] && !run.answers[id].correct);
+    const doc = {
+      at: new Date().toISOString(),
+      subjects: [...new Set(ids.map(id => (S.byId.get(id) || {}).subject).filter(Boolean))],
+      total: ids.length,
+      correct: ids.length - wrong.length,
+      ids, wrong,
+    };
+    S.sessions = [doc, ...S.sessions].slice(0, 10);
+    if (S.db) S.db.collection("sessions").add(doc).catch(() => {});
+    else store.set("nq_sessions", S.sessions);
+  }
+
+  // ---------- helpers ----------
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  function shuffle(a) {
+    const r = new Uint32Array(a.length);
+    try { crypto.getRandomValues(r); } catch { for (let i = 0; i < r.length; i++) r[i] = Math.random() * 4294967295; }
+    for (let i = a.length - 1; i > 0; i--) { const j = r[i] % (i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+  const isWrongBook = id => { const s = S.stats[id]; return s && s.wrong > 0 && !s.mastered; };
+  const kindOf = q => q.keys ? (q.multi ? "multi" : "single") : "self";
+  function fmtDate(iso) {
+    const d = new Date(iso); if (isNaN(d)) return "";
+    return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  }
+
+  function richText(src) {
+    const blocks = String(src || "").split(/\n\s*\n/);
+    return blocks.map(block => {
+      const lines = block.split("\n").filter(l => l.trim() !== "");
+      if (!lines.length) return "";
+      if (lines.every(l => l.trim().startsWith("|"))) {
+        const rows = lines.filter(l => !/^\s*\|[\s\-:|]+\|\s*$/.test(l))
+          .map(l => l.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim()));
+        const head = rows.shift() || [];
+        return `<div class="tbl"><table><thead><tr>${head.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+      }
+      let cls = "", html = lines.map(esc).join("<br>");
+      const first = lines[0].trim();
+      if (first.startsWith("【題組敘述】")) cls = "passage";
+      else if (first.startsWith("【圖說】") || first.startsWith("（表") || first.startsWith("【表")) cls = "figure";
+      html = html.replace(/【([^】]{1,8})】/g, '<span class="lbl">【$1】</span>');
+      return `<p${cls ? ` class="${cls}"` : ""}>${html}</p>`;
+    }).join("");
+  }
+
+  function figHtml(q) {
+    return (q.figures || []).map(f => `<figure class="fig">${f}<figcaption>示意圖・依題意重繪，非原圖</figcaption></figure>`).join("");
+  }
+
+  function explainHtml(text) {
+    const lines = String(text || "").split("\n");
+    let out = "", list = [];
+    const flush = () => { if (list.length) { out += `<ul>${list.map(l => `<li>${esc(l)}</li>`).join("")}</ul>`; list = []; } };
+    for (const raw of lines) {
+      if (!raw.trim() || raw.trim() === "---") continue;
+      const sub = raw.match(/^\s{2,}-\s*(.*)$/);
+      if (sub) { list.push(sub[1]); continue; }
+      flush();
+      const m = raw.match(/^-\s*([^：]{1,6})：\s*(.*)$/);
+      if (m) {
+        const [, k, v] = m;
+        if (k === "觀念重點") out += `<p class="key"><span class="h">觀念重點</span>　${esc(v)}</p>`;
+        else out += `<p><span class="h">${esc(k)}</span>${v ? "　" + esc(v) : ""}</p>`;
+      } else {
+        const cont = raw.match(/^\s{2,}(.*)$/);
+        out += `<p>${esc(cont ? cont[1] : raw.replace(/^-\s*/, ""))}</p>`;
+      }
+    }
+    flush();
+    return out;
+  }
+
+  function setBar(buttons) {
+    if (!buttons || !buttons.length) { bar.hidden = true; barInner.innerHTML = ""; return; }
+    bar.hidden = false;
+    barInner.innerHTML = "";
+    buttons.forEach(b => {
+      const el = document.createElement("button");
+      el.className = "btn " + (b.cls || "");
+      el.textContent = b.label;
+      el.disabled = !!b.disabled;
+      el.id = b.id || "";
+      el.addEventListener("click", b.onClick);
+      barInner.appendChild(el);
+    });
+  }
+
+  // ---------- picking ----------
+  function pool() {
+    return S.questions.filter(q => S.prefs.subjects.includes(q.subject) && (S.prefs.open || q.keys));
+  }
+  function pick(mode, n) {
+    let p = pool();
+    if (mode === "wrong") p = p.filter(q => isWrongBook(q.id));
+    let ids = shuffle(p.map(q => q.id));
+    if (mode === "fresh") {
+      const recent = new Set(S.sessions.slice(0, 3).flatMap(s => s.ids || []));
+      const unseen = ids.filter(id => !S.stats[id]);
+      const seen = ids.filter(id => S.stats[id] && !recent.has(id));
+      const rest = ids.filter(id => S.stats[id] && recent.has(id));
+      ids = [...unseen, ...seen, ...rest];
+    }
+    return ids.slice(0, n);
+  }
+
+  function startRun(ids) {
+    if (!ids.length) return;
+    S.run = { ids, idx: 0, answers: {}, startedAt: Date.now() };
+    saveRun();
+    S.view = "quiz";
+    renderQuiz();
+  }
+  const saveRun = () => S.run ? store.set("nq_run", S.run) : store.del("nq_run");
+
+  // ---------- home ----------
+  function renderHome() {
+    S.view = "home";
+    const counts = Object.fromEntries(SUBJECTS.map(s => [s.name, S.questions.filter(q => q.subject === s.name).length]));
+    const wrongN = S.questions.filter(q => isWrongBook(q.id)).length;
+    const doneN = S.questions.filter(q => S.stats[q.id]).length;
+    const masteredN = S.questions.filter(q => S.stats[q.id] && S.stats[q.id].mastered).length;
+    const avail = pool();
+    const availWrong = avail.filter(q => isWrongBook(q.id)).length;
+    const maxN = Math.max(1, Math.min(50, S.prefs.mode === "wrong" ? availWrong : avail.length));
+    const saved = store.get("nq_run", null);
+    const canResume = saved && Array.isArray(saved.ids) && saved.idx < saved.ids.length && saved.ids.every(id => S.byId.has(id));
+
+    app.innerHTML = `
+      <header class="masthead">
+        <span class="eyebrow">學測自然・個人題庫</span>
+        <h1>自然科題庫練習</h1>
+        <span class="sub">共 <span class="mono">${S.questions.length}</span> 題・物理 ${counts["物理"]}・化學 ${counts["化學"]}・生物 ${counts["生物"]}・地科 ${counts["地科"]}</span>
+      </header>
+
+      ${canResume ? `<div class="resume"><span>上次的練習做到第 <span class="mono">${saved.idx + 1}</span> / ${saved.ids.length} 題</span><button class="btn small print" id="resumeBtn">繼續</button></div>` : ""}
+
+      <section class="section">
+        <h2>練習紀錄</h2>
+        <div class="stat-strip">
+          <div class="stat"><b>${doneN}</b><span>已練過的題目</span></div>
+          <div class="stat warn"><b>${wrongN}</b><span>錯題本（未掌握）</span></div>
+          <div class="stat"><b>${masteredN}</b><span>錯題已掌握</span></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>科目 <small>可複選</small></h2>
+        <div class="subjects">
+          ${SUBJECTS.map(s => `<button class="subj" id="subj-${s.name}" style="--c:${s.color}" aria-pressed="${S.prefs.subjects.includes(s.name)}" data-s="${s.name}">
+            <span class="dot"></span><span class="name">${s.name}</span><span class="n">${counts[s.name]} 題</span></button>`).join("")}
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>出題方式</h2>
+        <div class="seg" role="group" aria-label="出題方式">
+          <button data-m="all" id="mode-all" aria-pressed="${S.prefs.mode === "all"}">隨機<small>全部題目</small></button>
+          <button data-m="fresh" id="mode-fresh" aria-pressed="${S.prefs.mode === "fresh"}">新題優先<small>先出沒做過的</small></button>
+          <button data-m="wrong" id="mode-wrong" aria-pressed="${S.prefs.mode === "wrong"}">只練錯題<small>${availWrong} 題可練</small></button>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>題數</h2>
+        <div class="count-row">
+          <input type="range" id="countRange" min="1" max="${maxN}" step="1" value="${Math.min(S.prefs.count, maxN)}" aria-label="題數">
+          <span class="val" id="countVal">${Math.min(S.prefs.count, maxN)}</span>
+        </div>
+        <label class="switch" for="openToggle"><span>包含非選擇題<br><span class="notice">非選擇題看完解答後自己判斷對錯</span></span><input type="checkbox" id="openToggle" ${S.prefs.open ? "checked" : ""}></label>
+      </section>
+
+      <section class="section">
+        <h2>一鍵生成考卷 <small>照上面的科目、出題方式與題數出題</small></h2>
+        <div class="exam-box">
+          <p>產生兩個 PDF：試題卷（可列印作答）與詳解。生成考卷不會影響練習紀錄。</p>
+          <div class="exam-actions" id="examActions">
+            <button class="btn" id="examBtn">生成考卷 PDF</button>
+          </div>
+          <div class="exam-status" id="examStatus" aria-live="polite"></div>
+        </div>
+      </section>
+
+      ${PUBLIC ? `<section class="section">
+        <h2>題庫管理 <small>題庫只存在這台裝置</small></h2>
+        <div class="exam-box">
+          <p>目前題庫 ${S.questions.length} 題${S.bankName ? `（${esc(S.bankName)}）` : ""}。換手機或清除瀏覽器資料前，記得先匯出備份。</p>
+          <div class="exam-actions">
+            <label class="btn" for="importFile" id="importLabel" tabindex="0">匯入題庫檔案</label>
+            <button class="btn ghost" id="backupBtn">匯出備份</button>
+            <button class="btn ghost" id="clearBtn">清除題庫</button>
+          </div>
+          <input type="file" id="importFile" accept=".json,application/json" hidden>
+          <div class="exam-status" id="bankStatus" aria-live="polite"></div>
+          <div class="exam-actions" id="importChoice" hidden></div>
+          ${bankHelpHtml("home")}
+        </div>
+      </section>` : ""}
+
+      <section class="section">
+        <h2>最近的練習</h2>
+        <div class="history">
+          ${S.sessions.length ? S.sessions.slice(0, 5).map(s => `<div class="row"><span class="mono muted">${fmtDate(s.at)}</span><span>${esc((s.subjects || []).join("・"))}</span><span class="mono">${s.correct} / ${s.total}</span></div>`).join("")
+            : `<div class="empty">還沒有練習紀錄。選好科目和題數，按下方「開始練習」就會記錄在這裡。</div>`}
+        </div>
+        ${S.db ? "" : `<p class="notice">目前作答紀錄只存在這台裝置的瀏覽器裡。</p>`}
+      </section>
+    `;
+
+    app.querySelectorAll(".subj").forEach(b => b.addEventListener("click", () => {
+      const s = b.dataset.s, set = new Set(S.prefs.subjects);
+      set.has(s) ? set.delete(s) : set.add(s);
+      if (!set.size) return;
+      S.prefs.subjects = SUBJECTS.map(x => x.name).filter(x => set.has(x));
+      store.set("nq_prefs", S.prefs); renderHome();
+    }));
+    app.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+      S.prefs.mode = b.dataset.m; store.set("nq_prefs", S.prefs); renderHome();
+    }));
+    const range = document.getElementById("countRange"), val = document.getElementById("countVal");
+    range.addEventListener("input", () => { val.textContent = range.value; });
+    range.addEventListener("change", () => { S.prefs.count = +range.value; store.set("nq_prefs", S.prefs); });
+    document.getElementById("openToggle").addEventListener("change", e => { S.prefs.open = e.target.checked; store.set("nq_prefs", S.prefs); renderHome(); });
+    document.getElementById("examBtn").addEventListener("click", () => generateExam(S.prefs.mode, +document.getElementById("countRange").value));
+    if (exam.files.length) showExamDownloads();
+    if (exam.busy) document.getElementById("examBtn").disabled = true;
+    const rb = document.getElementById("resumeBtn");
+    if (rb) rb.addEventListener("click", () => { S.run = saved; S.view = "quiz"; renderQuiz(); });
+    if (PUBLIC) wireBankTools();
+
+    const n = Math.min(+range.value, maxN);
+    const empty = S.prefs.mode === "wrong" ? availWrong === 0 : avail.length === 0;
+    setBar([{ label: empty ? (S.prefs.mode === "wrong" ? "目前沒有錯題" : "沒有符合的題目") : `開始練習・${n} 題`, cls: "print", id: "startBtn", disabled: empty,
+      onClick: () => startRun(pick(S.prefs.mode, +document.getElementById("countRange").value)) }]);
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- quiz ----------
+  function renderQuiz() {
+    const run = S.run;
+    const id = run.ids[run.idx];
+    const q = S.byId.get(id);
+    if (!q) { finishRun(); return; }
+    const kind = kindOf(q);
+    const ans = run.answers[id] || { choice: "", done: false };
+    run.answers[id] = ans;
+    const locked = ans.done;
+
+    const needText = kind === "multi" ? `多選・應選 ${q.need || q.keys.length} 項` : kind === "single" ? "單選" : (q.options.length ? "選項僅供參考・自行對答" : "非選擇題");
+    app.innerHTML = `
+      <div class="qtop">
+        <div class="meta">
+          <span class="pos">${run.idx + 1} / ${run.ids.length}</span>
+          <span class="pill" style="--c:${colorOf(q.subject)}">${esc(q.subject)}</span>
+          <span class="muted">${esc(q.unit)}</span>
+          <button class="linkish quit" id="quitBtn">結束</button>
+        </div>
+        <div class="progress"><i style="width:${(run.idx / run.ids.length) * 100}%"></i></div>
+      </div>
+      <article class="card">
+        <div class="src"><span class="mono">${esc(q.id)}</span><span>${esc(q.source.replace(/（[^）]*題組[^）]*）|（多選[^）]*）/g, ""))}</span></div>
+        <div class="stem">${richText(q.stem)}</div>
+        ${figHtml(q)}
+        ${q.note ? `<p class="notice">${esc(q.note)}</p>` : ""}
+        <div class="need">${needText}</div>
+        ${q.options.length ? `<div class="opts ${locked || kind === "self" ? "locked" : ""}" id="opts">
+          ${q.options.map(o => `<button class="opt" data-k="${o.k}" id="opt-${o.k}" aria-pressed="${ans.choice.includes(o.k)}"><span class="bubble">${o.k}</span><span class="t">${esc(o.t)}</span></button>`).join("")}
+        </div>` : ""}
+        <div id="feedback"></div>
+      </article>
+    `;
+    document.getElementById("quitBtn").addEventListener("click", () => {
+      const answered = run.ids.filter(i => run.answers[i] && run.answers[i].done).length;
+      if (answered) finishRun(); else { S.run = null; saveRun(); renderHome(); }
+    });
+
+    if (kind !== "self" && !locked) {
+      app.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => {
+        const k = b.dataset.k;
+        if (kind === "single") ans.choice = k;
+        else ans.choice = ans.choice.includes(k) ? ans.choice.replace(k, "") : [...(ans.choice + k)].sort().join("");
+        app.querySelectorAll(".opt").forEach(x => x.setAttribute("aria-pressed", ans.choice.includes(x.dataset.k)));
+        document.getElementById("checkBtn").disabled = !ans.choice;
+        saveRun();
+      }));
+    }
+
+    if (locked) showFeedback(q, ans);
+    else if (kind === "self") setBar([{ label: "看解答", cls: "print", id: "checkBtn", onClick: () => { ans.revealed = true; showFeedback(q, ans); } }]);
+    else setBar([{ label: "確認答案", cls: "print", id: "checkBtn", disabled: !ans.choice, onClick: () => {
+      ans.correct = ans.choice === q.keys; ans.done = true;
+      recordAnswer(q.id, ans.correct, ans.choice); saveRun(); showFeedback(q, ans);
+    } }]);
+    window.scrollTo(0, 0);
+  }
+
+  function showFeedback(q, ans) {
+    const kind = kindOf(q);
+    const fb = document.getElementById("feedback");
+    const ai = /AI/.test(q.ansSource) ? `<span class="badge-ai">${esc(q.ansSource)}</span>` : (q.ansSource ? `<span class="badge-ai">${esc(q.ansSource)}</span>` : "");
+    let verdict;
+    if (kind === "self") {
+      verdict = `<div class="verdict self"><b>參考答案</b><span class="ans">${esc(q.answer)}</span></div>`;
+    } else {
+      const opts = document.getElementById("opts");
+      opts.classList.add("locked");
+      opts.querySelectorAll(".opt").forEach(b => {
+        const k = b.dataset.k;
+        if (q.keys.includes(k)) b.classList.add("is-key");
+        else if (ans.choice.includes(k)) b.classList.add("is-miss");
+      });
+      verdict = ans.correct
+        ? `<div class="verdict ok"><b>答對了</b><span class="ans">答案 ${esc(q.keys)}</span></div>`
+        : `<div class="verdict bad"><b>答錯了</b><span class="ans">你選 ${esc(ans.choice || "—")}，正確答案 ${esc(q.keys)}</span></div>`;
+    }
+    fb.innerHTML = `${verdict}<div class="explain">${explainHtml(q.explain)}<div>${ai}</div></div>`;
+
+    const last = S.run.idx >= S.run.ids.length - 1;
+    const next = () => { if (last) finishRun(); else { S.run.idx++; saveRun(); renderQuiz(); } };
+    if (kind === "self" && !ans.done) {
+      setBar([
+        { label: "我答錯了", cls: "ghost", id: "selfBad", onClick: () => { ans.correct = false; ans.done = true; recordAnswer(q.id, false, ""); saveRun(); next(); } },
+        { label: "我答對了", cls: "print", id: "selfOk", onClick: () => { ans.correct = true; ans.done = true; recordAnswer(q.id, true, ""); saveRun(); next(); } },
+      ]);
+    } else {
+      setBar([{ label: last ? "看成績" : "下一題", cls: "print", id: "nextBtn", onClick: next }]);
+    }
+    fb.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  }
+
+  // ---------- result ----------
+  function finishRun() {
+    const run = S.run;
+    const doneIds = run.ids.filter(id => run.answers[id] && run.answers[id].done);
+    const finished = Object.assign({}, run, { ids: doneIds });
+    if (doneIds.length) recordSession(finished);
+    S.run = null; saveRun();
+    renderResult(finished);
+  }
+
+  function renderResult(run) {
+    S.view = "result";
+    const total = run.ids.length;
+    const correct = run.ids.filter(id => run.answers[id].correct).length;
+    const wrongIds = run.ids.filter(id => !run.answers[id].correct);
+    app.innerHTML = `
+      <header class="masthead"><span class="eyebrow">練習結果</span>
+        <div class="score"><div class="big mono">${correct}<small> / ${total}</small></div>
+        <span class="muted">${total ? Math.round(correct / total * 100) : 0}%・答錯的題目已加入錯題本</span></div>
+      </header>
+      <div class="rlist">
+        ${run.ids.map((id, i) => {
+          const q = S.byId.get(id), a = run.answers[id];
+          const firstLine = (q.stem.split("\n").find(l => l.trim() && !l.startsWith("【")) || q.stem).trim();
+          const tail = q.keys ? (a.correct ? `答案 ${q.keys}` : `你選 ${a.choice || "—"}・答案 ${q.keys}`) : (a.correct ? "自評：答對" : "自評：答錯");
+          return `<details class="ritem ${a.correct ? "ok" : "bad"}"><summary><span class="mark">${a.correct ? "○" : "✕"}</span><span class="mono muted">${i + 1}</span><span class="snip">${esc(q.subject)}・${esc(firstLine)}</span></summary>
+            <div class="body"><p class="notice">${esc(q.id)}・${esc(tail)}</p><div class="explain">${explainHtml(q.explain)}</div></div></details>`;
+        }).join("")}
+      </div>
+    `;
+    const btns = [{ label: "回首頁", cls: "ghost", id: "homeBtn", onClick: renderHome }];
+    if (wrongIds.length) btns.push({ label: `錯的 ${wrongIds.length} 題再練一次`, cls: "print", id: "retryBtn", onClick: () => startRun(shuffle(wrongIds.slice())) });
+    else btns.push({ label: "再練一回", cls: "print", id: "againBtn", onClick: renderHome });
+    setBar(btns);
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- exam PDF ----------
+  const LIBS = [
+    "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+  ];
+  const A4W = 595.28, A4H = 841.89, PAGE_H = 1123, CONTENT_H = 1123 - 56 - 48 - 24;
+  const exam = { busy: false, files: [] };
+
+  function loadScript(src) {
+    return new Promise((res, rej) => {
+      if (document.querySelector(`script[src="${src}"]`)) return res();
+      const s = document.createElement("script");
+      s.src = src; s.onload = () => res(); s.onerror = () => rej(new Error("load " + src));
+      document.head.appendChild(s);
+    });
+  }
+
+  function examStatus(msg, err) {
+    const el = document.getElementById("examStatus");
+    if (el) { el.textContent = msg; el.classList.toggle("err", !!err); }
+  }
+
+  function todayStr(sep) {
+    const d = new Date();
+    return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, "0"), String(d.getDate()).padStart(2, "0")].join(sep);
+  }
+
+  function orderForExam(ids) {
+    const qs = ids.map(id => S.byId.get(id)).filter(Boolean);
+    return [...qs.filter(q => q.options.length), ...qs.filter(q => !q.options.length)];
+  }
+
+  function kindLabel(q) {
+    if (!q.options.length) return "非選擇題";
+    if (q.multi) return `多選・應選 ${q.need || (q.keys || "").length} 項`;
+    return q.keys ? "單選" : "選擇題";
+  }
+
+  function paperBlocks(qs) {
+    const subjects = [...new Set(qs.map(q => q.subject))].join("・");
+    const blocks = [`<div class="ex-h"><div class="ex-t">自然科練習卷</div>
+      <div class="ex-m">科目：${esc(subjects)}　題數：${qs.length} 題　日期：${todayStr("/")}</div>
+      <div class="ex-n">姓名：＿＿＿＿＿＿＿＿　　得分：＿＿＿＿＿＿</div></div>`];
+    let sec = "";
+    qs.forEach((q, i) => {
+      const s = q.options.length ? "第壹部分　選擇題" : "第貳部分　非選擇題";
+      if (s !== sec) { sec = s; blocks.push(`<div class="ex-sec">${s}</div>`); }
+      blocks.push(`<div class="ex-q"><div class="ex-qh"><b>${i + 1}.</b><span class="ex-tag">${esc(q.subject)}・${kindLabel(q)}</span><span class="ex-id">${esc(q.id)}</span></div>
+        <div class="stem">${richText(q.stem)}</div>
+        ${figHtml(q)}
+        ${q.options.length ? `<div class="ex-opts">${q.options.map(o => `<div>(${o.k}) ${esc(o.t)}</div>`).join("")}</div>` : `<div class="ex-ansbox">作答區</div>`}</div>`);
+    });
+    return blocks;
+  }
+
+  function keyBlocks(qs) {
+    const blocks = [`<div class="ex-h"><div class="ex-t">自然科練習卷　詳解</div>
+      <div class="ex-m">題數：${qs.length} 題　日期：${todayStr("/")}</div></div>`];
+    blocks.push(`<div class="ex-sec">答案一覽</div>`);
+    for (let i = 0; i < qs.length; i += 25) {
+      blocks.push(`<div class="ex-grid">${qs.slice(i, i + 25).map((q, j) => `<div><b>${i + j + 1}</b><span>${esc(q.keys || "見詳解")}</span></div>`).join("")}</div>`);
+    }
+    blocks.push(`<div class="ex-sec">逐題詳解</div>`);
+    qs.forEach((q, i) => {
+      blocks.push(`<div class="ex-q"><div class="ex-qh"><b>${i + 1}.</b><span>答案：${esc(q.keys || "")}</span><span class="ex-id">${esc(q.id)}・${esc(q.subject)}</span></div>
+        ${q.keys ? "" : `<div class="ex-a">${esc(q.answer)}</div>`}
+        <div class="explain">${explainHtml(q.explain)}</div>
+        ${q.ansSource ? `<div class="ex-src">${esc(q.ansSource)}</div>` : ""}</div>`);
+    });
+    return blocks;
+  }
+
+  async function renderPdf(blocks, title) {
+    const root = document.createElement("div");
+    root.className = "pdf-root";
+    document.body.appendChild(root);
+    const pages = [];
+    const newPage = () => {
+      const pg = document.createElement("div"); pg.className = "pg";
+      const c = document.createElement("div"); c.className = "pg-c";
+      pg.appendChild(c); root.appendChild(pg); pages.push(pg); return c;
+    };
+    let c = newPage();
+    for (const html of blocks) {
+      const el = document.createElement("div");
+      el.className = "blk"; el.innerHTML = html;
+      c.appendChild(el);
+      if (c.offsetHeight > CONTENT_H && c.children.length > 1) {
+        c.removeChild(el); c = newPage(); c.appendChild(el);
+      }
+    }
+    pages.forEach((pg, i) => {
+      const f = document.createElement("div"); f.className = "pg-f";
+      f.textContent = `${title}　第 ${i + 1} / ${pages.length} 頁`;
+      pg.appendChild(f);
+    });
+    try {
+      const pdf = new window.jspdf.jsPDF({ unit: "pt", format: "a4", compress: true });
+      let first = true;
+      for (let i = 0; i < pages.length; i++) {
+        examStatus(`正在排版${title}（${i + 1} / ${pages.length} 頁）…`);
+        const canvas = await window.html2canvas(pages[i], { scale: 2, backgroundColor: "#ffffff", logging: false });
+        const sliceH = Math.round(canvas.width * (A4H / A4W));
+        for (let y = 0; y < canvas.height; y += sliceH) {
+          const h = Math.min(sliceH, canvas.height - y);
+          const part = document.createElement("canvas");
+          part.width = canvas.width; part.height = h;
+          part.getContext("2d").drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h);
+          if (!first) pdf.addPage();
+          first = false;
+          pdf.addImage(part.toDataURL("image/jpeg", 0.88), "JPEG", 0, 0, A4W, h * (A4W / canvas.width));
+        }
+      }
+      return pdf.output("blob");
+    } finally {
+      root.remove();
+    }
+  }
+
+  async function saveFile(name, blob) {
+    let dl = null;
+    try { dl = window.claude && window.claude.use ? await window.claude.use("downloads") : null; } catch { dl = null; }
+    if (dl) {
+      try { await dl.save({ filename: name, data: blob }); examStatus(`已儲存：${name}`); }
+      catch (e) {
+        if (e && e.code === "declined") examStatus("已取消儲存，可以再按一次。");
+        else if (e && e.code === "rate_limited") examStatus("上一個儲存視窗還沒關閉，請先處理它。", true);
+        else examStatus("這裡沒辦法儲存檔案。請改用桌面上的「自然科題庫練習.html」生成考卷。", true);
+      }
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    examStatus(`已下載：${name}`);
+  }
+
+  async function generateExam(mode, n) {
+    if (exam.busy) return;
+    const ids = pick(mode, n);
+    if (!ids.length) { examStatus("沒有符合條件的題目，請調整科目或出題方式。", true); return; }
+    exam.busy = true;
+    const btn = document.getElementById("examBtn");
+    if (btn) btn.disabled = true;
+    try {
+      examStatus("正在載入排版工具…");
+      for (const src of LIBS) await loadScript(src);
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      const qs = orderForExam(ids);
+      const base = `自然科練習卷_${todayStr("")}_${qs.length}題`;
+      const paper = await renderPdf(paperBlocks(qs), "試題卷");
+      const key = await renderPdf(keyBlocks(qs), "詳解");
+      exam.qs = qs;
+      exam.files = [{ name: base + ".pdf", blob: paper, label: "下載試題卷" }, { name: base + "_詳解.pdf", blob: key, label: "下載詳解 PDF" }];
+      showExamDownloads();
+      examStatus(`考卷完成：${qs.length} 題。按下方按鈕分別儲存。`);
+    } catch (e) {
+      examStatus("生成失敗。請確認網路連線後再試一次。", true);
+    } finally {
+      exam.busy = false;
+      const b = document.getElementById("examBtn");
+      if (b) b.disabled = false;
+    }
+  }
+
+  function showExamDownloads() {
+    const box = document.getElementById("examActions");
+    if (!box) return;
+    box.innerHTML = "";
+    exam.files.forEach((f, i) => {
+      const b = document.createElement("button");
+      b.className = "btn" + (i === 0 ? " print" : " ghost");
+      b.id = "examDl" + i;
+      b.textContent = f.label;
+      b.addEventListener("click", () => saveFile(f.name, f.blob));
+      box.appendChild(b);
+    });
+    const view = document.createElement("button");
+    view.className = "btn"; view.id = "examView"; view.textContent = "在網頁看詳解";
+    view.addEventListener("click", renderExamKey);
+    box.insertBefore(view, box.children[1]);
+    const again = document.createElement("button");
+    again.className = "btn ghost"; again.id = "examBtn"; again.textContent = "重新出題";
+    again.addEventListener("click", () => generateExam(S.prefs.mode, +document.getElementById("countRange").value));
+    box.appendChild(again);
+  }
+
+  function renderExamKey() {
+    const qs = exam.qs || [];
+    if (!qs.length) { renderHome(); return; }
+    S.view = "examkey";
+    app.innerHTML = `
+      <header class="masthead"><span class="eyebrow">考卷詳解</span>
+        <h1>自然科練習卷</h1>
+        <span class="sub">${qs.length} 題・${todayStr("/")}・題號與 PDF 試題卷相同</span>
+      </header>
+      <section class="section">
+        <h2>答案一覽 <small>點題號跳到詳解</small></h2>
+        <div class="key-grid">${qs.map((q, i) => `<a href="#k${i + 1}" data-k="${i + 1}"><b>${i + 1}</b>${esc(q.keys || "詳解")}</a>`).join("")}</div>
+      </section>
+      <section class="section">
+        <h2>逐題詳解</h2>
+        ${qs.map((q, i) => `<article class="card key-item" id="k${i + 1}">
+          <div class="src"><span class="mono">${i + 1}.</span><span class="pill" style="--c:${colorOf(q.subject)}">${esc(q.subject)}</span><span class="mono">${esc(q.id)}</span></div>
+          <div class="ans-line"><span>答案</span><strong>${esc(q.keys || "")}</strong></div>
+          ${q.keys ? "" : `<div class="verdict self"><span class="ans">${esc(q.answer)}</span></div>`}
+          <details><summary>看題目</summary><div class="stem">${richText(q.stem)}</div>${figHtml(q)}
+            ${q.options.length ? `<div class="qopts">${q.options.map(o => `<div>(${o.k}) ${esc(o.t)}</div>`).join("")}</div>` : ""}</details>
+          <div class="explain">${explainHtml(q.explain)}${q.ansSource ? `<div><span class="badge-ai">${esc(q.ansSource)}</span></div>` : ""}</div>
+        </article>`).join("")}
+      </section>`;
+    app.querySelectorAll(".key-grid a").forEach(a => a.addEventListener("click", e => {
+      e.preventDefault();
+      const el = document.getElementById("k" + a.dataset.k);
+      if (el) el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    }));
+    setBar([{ label: "回首頁", cls: "print", id: "keyHome", onClick: renderHome }]);
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- public mode: bank import / backup ----------
+  const SAMPLE = { name: "範例題目", questions: [
+    { id: "SMP-0001", subject: "物理", unit: "力學（牛頓第二定律）", source: "範例題目（原創）",
+      stem: "一輛質量 1000 公斤的汽車，在水平路面上由靜止開始以等加速度前進，5 秒後速率達到 10 m/s。若忽略空氣阻力，則汽車所受的合力量值約為多少牛頓？",
+      options: [{ k: "A", t: "500" }, { k: "B", t: "1000" }, { k: "C", t: "2000" }, { k: "D", t: "5000" }, { k: "E", t: "10000" }],
+      keys: "C", multi: false, need: null, note: "", answer: "C", ansSource: "範例題目",
+      explain: "- 解析：a ＝ Δv ÷ t ＝ 10 ÷ 5 ＝ 2 m/s²；F ＝ ma ＝ 1000 × 2 ＝ 2000 N。\n- 觀念重點：先由速度變化求加速度，再用 F ＝ ma。", figures: [] },
+    { id: "SMP-0002", subject: "化學", unit: "化學計量（莫耳）", source: "範例題目（原創）",
+      stem: "下列哪些物質的量恰為 1 莫耳？（原子量：H＝1，C＝12，O＝16）（應選 2 項）",
+      options: [{ k: "A", t: "18 克的水" }, { k: "B", t: "16 克的氧氣" }, { k: "C", t: "44 克的二氧化碳" }, { k: "D", t: "1 克的氫氣" }, { k: "E", t: "6 克的碳" }],
+      keys: "AC", multi: true, need: 2, note: "", answer: "AC", ansSource: "範例題目",
+      explain: "- 解析：\n  - (A) 18 ÷ 18 ＝ 1 mol，對。\n  - (B) O₂ 分子量 32，16 克只有 0.5 mol。\n  - (C) 44 ÷ 44 ＝ 1 mol，對。\n  - (D) H₂ 分子量 2，1 克只有 0.5 mol。\n  - (E) 6 ÷ 12 ＝ 0.5 mol。\n- 觀念重點：莫耳數 ＝ 質量 ÷ 分子量，注意雙原子分子。", figures: [] },
+    { id: "SMP-0003", subject: "生物", unit: "細胞（胞器）", source: "範例題目（原創）",
+      stem: "胰臟細胞會大量分泌消化酶。下列哪一個胞器在這類細胞中最可能特別發達？",
+      options: [{ k: "A", t: "葉綠體" }, { k: "B", t: "中央大液泡" }, { k: "C", t: "粗糙內質網" }, { k: "D", t: "細胞壁" }, { k: "E", t: "中心粒" }],
+      keys: "C", multi: false, need: null, note: "", answer: "C", ansSource: "範例題目",
+      explain: "- 解析：消化酶是蛋白質，由附著在粗糙內質網上的核糖體合成並加工，分泌旺盛的細胞粗糙內質網特別發達。動物細胞沒有葉綠體、細胞壁與中央大液泡。\n- 觀念重點：分泌蛋白路徑：核糖體 → 粗糙內質網 → 高基氏體 → 細胞膜。", figures: [] },
+    { id: "SMP-0004", subject: "地科", unit: "天文（月相）", source: "範例題目（原創）",
+      stem: "農曆十五日晚上，在臺灣看到的月相與月球位置，下列敘述何者正確？",
+      options: [{ k: "A", t: "滿月，日落時從東方升起" }, { k: "B", t: "滿月，日落時從西方落下" }, { k: "C", t: "新月，整晚都看不到" }, { k: "D", t: "上弦月，日落時位於南方天空" }, { k: "E", t: "下弦月，半夜才從東方升起" }],
+      keys: "A", multi: false, need: null, note: "", answer: "A", ansSource: "範例題目",
+      explain: "- 解析：農曆十五前後為滿月，月球與太陽相差約 180°，太陽西落時月球正好從東方升起，整晚可見。\n- 觀念重點：滿月時日、地、月約成一直線，地球在中間。", figures: [] },
+  ] };
+  const SUBJ_NAMES = SUBJECTS.map(s => s.name);
+
+  function sanitizeSvg(src) {
+    try {
+      const doc = new DOMParser().parseFromString(String(src), "image/svg+xml");
+      const root = doc.documentElement;
+      if (!root || root.nodeName.toLowerCase() !== "svg") return "";
+      root.querySelectorAll("script, foreignObject, iframe, object, embed, style, a").forEach(n => n.remove());
+      [root, ...root.querySelectorAll("*")].forEach(el => [...el.attributes].forEach(a => {
+        const v = a.value.trim().toLowerCase();
+        if (/^on/i.test(a.name) || /href$/i.test(a.name) || v.startsWith("javascript:") || v.includes("url(")) el.removeAttribute(a.name);
+      }));
+      return new XMLSerializer().serializeToString(root);
+    } catch { return ""; }
+  }
+
+  // 檢查並整理匯入的題目；不合格的題目略過
+  function cleanQuestions(list) {
+    const out = [], seen = new Set();
+    for (const q of Array.isArray(list) ? list : []) {
+      if (!q || typeof q !== "object") continue;
+      const id = String(q.id || "").slice(0, 40);
+      if (!id || seen.has(id) || !SUBJ_NAMES.includes(q.subject) || typeof q.stem !== "string") continue;
+      const options = Array.isArray(q.options) ? q.options.filter(o => o && /^[A-F]$/.test(o.k)).map(o => ({ k: o.k, t: String(o.t || "") })) : [];
+      const valid = new Set(options.map(o => o.k));
+      const keys = typeof q.keys === "string" && q.keys && [...q.keys].every(k => valid.has(k)) ? [...q.keys].sort().join("") : null;
+      seen.add(id);
+      out.push({
+        id, subject: q.subject, unit: String(q.unit || ""), source: String(q.source || ""), stem: q.stem,
+        options, keys, multi: !!(keys && (keys.length > 1 || q.multi)), need: Number.isInteger(q.need) ? q.need : null,
+        note: String(q.note || ""), answer: String(q.answer || ""), ansSource: String(q.ansSource || ""),
+        explain: String(q.explain || ""), figures: (Array.isArray(q.figures) ? q.figures : []).map(sanitizeSvg).filter(Boolean),
+      });
+    }
+    return out;
+  }
+
+  function setBank(bank) {
+    S.questions = bank.questions || [];
+    S.byId = new Map(S.questions.map(q => [q.id, q]));
+    S.bankName = bank.name || "";
+  }
+
+  function saveBank(bank) {
+    if (!store.set("nq_bank", bank)) return false;
+    setBank(bank);
+    return true;
+  }
+
+  function bankStatus(msg, err) {
+    const el = document.getElementById("bankStatus") || document.getElementById("welcomeStatus");
+    if (el) { el.textContent = msg; el.classList.toggle("err", !!err); }
+  }
+
+  // 從檔案內容或貼上的文字取出題庫 JSON（可接受 ```json 程式碼區塊與前後說明文字）
+  function parseImportText(text, fallbackName, onReady) {
+    let data = null;
+    const src = String(text || "");
+    const fence = src.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    for (const cand of [src, fence && fence[1], src.slice(src.indexOf("{"), src.lastIndexOf("}") + 1)]) {
+      if (!cand) continue;
+      try { data = JSON.parse(cand); break; } catch {}
+    }
+    if (Array.isArray(data)) data = { questions: data };
+    if (!data) { bankStatus("讀不到題目資料。請確認貼上的是 AI 回覆中的整段題目資料（以 { 開頭、} 結尾）。", true); return; }
+    const questions = cleanQuestions(data.questions);
+    if (!questions.length) { bankStatus("找不到可用的題目。請確認選的是題庫檔案，或貼上的內容完整。", true); return; }
+    const skipped = ((data.questions || []).length || 0) - questions.length;
+    onReady({
+      name: String(data.name || fallbackName || "我的題庫").slice(0, 60), questions,
+      stats: data.stats && typeof data.stats === "object" ? data.stats : null,
+      sessions: Array.isArray(data.sessions) ? data.sessions.slice(0, 10) : null, skipped,
+    });
+  }
+
+  function readImport(file, onReady) {
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) { bankStatus("檔案太大，題庫檔案應該小於 20 MB。", true); return; }
+    const reader = new FileReader();
+    reader.onload = () => parseImportText(reader.result, file.name.replace(/\.json$/i, ""), onReady);
+    reader.onerror = () => bankStatus("讀取檔案失敗，請再試一次。", true);
+    reader.readAsText(file);
+  }
+
+  const PREFIX = { "物理": "PHY", "化學": "CHE", "生物": "BIO", "地科": "EAR" };
+  function applyImport(imp, mode) {
+    let questions = imp.questions;
+    if (mode === "merge") {
+      const map = new Map(S.questions.map(q => [q.id, q]));
+      const nextNo = {};
+      const bump = subj => {
+        const p = PREFIX[subj];
+        if (nextNo[p] == null) nextNo[p] = Math.max(0, ...[...map.keys()].filter(k => k.startsWith(p + "-")).map(k => parseInt(k.split("-")[1], 10) || 0));
+        nextNo[p] += 1;
+        return `${p}-${String(nextNo[p]).padStart(4, "0")}`;
+      };
+      imp.questions.forEach(q => {
+        const old = map.get(q.id);
+        // 編號相同但題目不同（例如分批建檔都從 0001 開始）→ 自動改成新編號
+        if (old && old.stem !== q.stem) q = Object.assign({}, q, { id: bump(q.subject) });
+        map.set(q.id, q);
+      });
+      questions = [...map.values()];
+    }
+    if (!saveBank({ name: mode === "merge" && S.bankName ? S.bankName : imp.name, questions })) {
+      bankStatus("儲存失敗：這台裝置的瀏覽器空間不足，或目前是無痕模式。", true); return;
+    }
+    if (mode === "replace" && imp.stats) { S.stats = imp.stats; store.set("nq_stats", S.stats); }
+    if (mode === "replace" && imp.sessions) { S.sessions = imp.sessions; store.set("nq_sessions", S.sessions); }
+    renderHome();
+    bankStatus(`已匯入 ${imp.questions.length} 題${imp.skipped > 0 ? `，略過 ${imp.skipped} 題格式不符的題目` : ""}。題庫共 ${S.questions.length} 題。`);
+  }
+
+  function downloadText(name, text) {
+    const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
+  const PROMPT = [
+    "你是高中自然科（物理、化學、生物、地科）題庫建檔助手。請把我上傳的題本照片轉成題目資料。",
+    "規則：",
+    "1. 逐題辨識照片中的題目。照片可能是橫拍、旋轉或一次拍兩頁。",
+    "2. 只輸出一個 JSON 程式碼區塊，不要其他說明。格式：",
+    '{"name":"題本名稱","questions":[{"id":"PHY-0001","subject":"物理","unit":"單元名稱","source":"題本名稱 第1題","stem":"題幹文字","options":[{"k":"A","t":"選項文字"}],"keys":"C","multi":false,"need":null,"answer":"C","ansSource":"AI 解答（待確認）","explain":"- 解析：說明\\n  - (A) 錯。原因\\n- 觀念重點：重點"}]}',
+    "3. subject 只能是 物理、化學、生物、地科；id 的前綴分別是 PHY、CHE、BIO、EAR，加四位數編號。",
+    "4. keys 是正確選項字母，多選題依字母排序（例如 \"BD\"），multi 為 true，need 是應選幾項。",
+    "5. 非選擇題的 options 為 []、keys 為 null，答案寫在 answer。",
+    "6. 題組的共同敘述要放進每一小題的 stem 開頭，標示【題組敘述】。",
+    "7. 附圖改用文字描述放進 stem，以【圖說】開頭，寫出作答需要的數值與位置關係。",
+    "8. 照片上有官方解答就照官方答案，ansSource 寫「題本解答」；沒有就自行解題，寫「AI 解答（待確認）」。",
+    "9. 手寫筆跡、紅筆批改不是官方答案。看不清的字用［?］標記，不要要求我重拍。",
+    "10. explain 用繁體中文逐選項說明對錯，最後一行寫「- 觀念重點：」。",
+  ].join("\n");
+
+  function bankHelpHtml(p) {
+    return `
+      <details class="howto" id="${p}Paste">
+        <summary>貼上題目資料（從 AI 複製）</summary>
+        <textarea id="${p}PasteText" rows="6" placeholder="把 AI 回覆的整段題目資料貼在這裡"></textarea>
+        <button class="btn" id="${p}PasteBtn">匯入貼上的內容</button>
+      </details>
+      <details class="howto" id="${p}How">
+        <summary>怎麼建立自己的題庫？</summary>
+        <ol>
+          <li>按下方「複製建檔提示詞」。</li>
+          <li>打開 Gemini、Claude 或 ChatGPT 等可以看照片的 AI（免費版也可以），貼上提示詞，再附上題本照片送出。一次 2～4 張照片比較穩定。</li>
+          <li>AI 回覆後，複製它回覆的整段題目資料，回到這裡用「貼上題目資料」匯入。題目很多時，請它分批輸出。</li>
+          <li>答案標「AI 解答（待確認）」的題目，練習時請自己再核對一次。</li>
+        </ol>
+        <button class="btn ghost" id="${p}CopyPrompt">複製建檔提示詞</button>
+        <pre class="prompt" id="${p}PromptText">${esc(PROMPT)}</pre>
+      </details>`;
+  }
+
+  function wireBankHelp(p, onReady) {
+    document.getElementById(p + "PasteBtn").addEventListener("click", () => {
+      const ta = document.getElementById(p + "PasteText");
+      parseImportText(ta.value, "", imp => { ta.value = ""; onReady(imp); });
+    });
+    document.getElementById(p + "CopyPrompt").addEventListener("click", () => {
+      const done = () => bankStatus("已複製建檔提示詞，貼到 AI 對話就能使用。");
+      const fallback = () => {
+        const pre = document.getElementById(p + "PromptText");
+        const r = document.createRange(); r.selectNodeContents(pre);
+        const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+        bankStatus("已選取提示詞，請按「拷貝」複製。");
+      };
+      try { navigator.clipboard.writeText(PROMPT).then(done, fallback); } catch { fallback(); }
+    });
+  }
+
+  function wireBankTools() {
+    const input = document.getElementById("importFile");
+    const label = document.getElementById("importLabel");
+    label.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
+    const choose = imp => {
+      const box = document.getElementById("importChoice");
+      box.hidden = false; box.innerHTML = "";
+      bankStatus(`檔案「${imp.name}」有 ${imp.questions.length} 題。要怎麼匯入？`);
+      [["merge", "合併到目前題庫", "print"], ["replace", imp.stats ? "取代（含作答紀錄）" : "取代目前題庫", "ghost"]].forEach(([m, l, c]) => {
+        const b = document.createElement("button");
+        b.className = "btn " + c; b.id = "import-" + m; b.textContent = l;
+        b.addEventListener("click", () => applyImport(imp, m));
+        box.appendChild(b);
+      });
+    };
+    input.addEventListener("change", () => readImport(input.files[0], imp => { input.value = ""; choose(imp); }));
+    wireBankHelp("home", choose);
+    document.getElementById("backupBtn").addEventListener("click", () => {
+      downloadText(`自然科題庫備份_${todayStr("")}.json`, JSON.stringify({
+        format: "自然科題庫備份", exportedAt: new Date().toISOString(), name: S.bankName,
+        questions: S.questions, stats: S.stats, sessions: S.sessions,
+      }));
+      bankStatus("已匯出備份檔（含題目與作答紀錄）。");
+    });
+    let armed = false;
+    const clearBtn = document.getElementById("clearBtn");
+    clearBtn.addEventListener("click", () => {
+      if (!armed) { armed = true; clearBtn.textContent = "再按一次確認清除"; bankStatus("清除後題目與作答紀錄都會刪除，建議先匯出備份。", true); return; }
+      ["nq_bank", "nq_stats", "nq_sessions", "nq_run"].forEach(k => store.del(k));
+      S.stats = {}; S.sessions = []; setBank({ questions: [] });
+      renderWelcome();
+    });
+  }
+
+  function renderWelcome() {
+    S.view = "welcome";
+    app.innerHTML = `
+      <header class="masthead">
+        <span class="eyebrow">學測自然・個人題庫</span>
+        <h1>自然科題庫練習</h1>
+        <span class="sub">匯入自己的題庫，隨機出題、即時批改、錯題本、一鍵生成考卷。</span>
+      </header>
+      <section class="section">
+        <h2>開始使用</h2>
+        <div class="exam-box">
+          <p>題庫只存在你這台裝置的瀏覽器裡，不會上傳到任何地方。</p>
+          <div class="exam-actions">
+            <label class="btn print" for="welcomeFile" id="welcomeImport" tabindex="0">匯入題庫檔案</label>
+            <button class="btn ghost" id="sampleBtn">試用範例題</button>
+          </div>
+          <input type="file" id="welcomeFile" accept=".json,application/json" hidden>
+          <div class="exam-status" id="welcomeStatus" aria-live="polite"></div>
+          ${bankHelpHtml("welcome")}
+        </div>
+      </section>
+      <section class="section">
+        <h2>小提醒</h2>
+        <div class="history">
+          <div class="row"><span class="mono muted">1</span><span>題庫檔案是 .json 格式，可以從你的題庫工具匯出。</span><span></span></div>
+          <div class="row"><span class="mono muted">2</span><span>用手機瀏覽器「加入主畫面」，就能像 App 一樣打開。</span><span></span></div>
+          <div class="row"><span class="mono muted">3</span><span>換手機或清除瀏覽器資料前，先在首頁「匯出備份」。</span><span></span></div>
+        </div>
+      </section>`;
+    const input = document.getElementById("welcomeFile");
+    document.getElementById("welcomeImport").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
+    input.addEventListener("change", () => readImport(input.files[0], imp => { input.value = ""; applyImport(imp, "replace"); }));
+    wireBankHelp("welcome", imp => applyImport(imp, "replace"));
+    document.getElementById("sampleBtn").addEventListener("click", () => {
+      if (saveBank({ name: SAMPLE.name, questions: cleanQuestions(SAMPLE.questions) })) renderHome();
+      else bankStatus("儲存失敗：這台裝置的瀏覽器空間不足，或目前是無痕模式。", true);
+    });
+    setBar(null);
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- boot ----------
+  loadLocal();
+  if (PUBLIC) {
+    const bank = store.get("nq_bank", null);
+    if (bank && Array.isArray(bank.questions) && bank.questions.length) { setBank(bank); renderHome(); }
+    else renderWelcome();
+  } else
+  // 桌面版（單一檔案）會把題目直接內嵌在 window.__QUESTIONS__
+  (window.__QUESTIONS__ ? Promise.resolve(window.__QUESTIONS__)
+    : fetch("questions.json", { cache: "no-store" }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }))
+    .then(data => {
+      S.questions = data.questions || [];
+      S.byId = new Map(S.questions.map(q => [q.id, q]));
+      renderHome();
+      connectDb();
+    })
+    .catch(() => {
+      app.innerHTML = `<div class="loading">題庫載入失敗。請重新整理頁面；如果一直失敗，回到 Claude 對話說「練習網頁打不開」。</div>`;
+    });
+})();
+</script>
+
+</body></html>
